@@ -267,9 +267,8 @@ Defendant win probability: [Y]%
 Reasoning: [2-3 sentences explaining the split based on the strength of arguments and applicable UK case law.]`;
 
     try {
-      // ── Call our secure backend — API key never touches the browser ──
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
-      const response = await fetch(`${backendUrl}/analyse`, {
+      // ── Call our Vercel serverless function — same origin, API key never touches the browser ──
+      const response = await fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contractText, disputeDesc }),
@@ -309,7 +308,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
     <div className="app">
       <header>
         <div className="logo">
-          <div className="logo-title">Unknown</div>
+          <div className="logo-title">ARBITRER</div>
           <div className="logo-sub">Contract Dispute Analyser · UK Law</div>
         </div>
         <div className="live-badge"><div className="live-dot" />Groq AI · UK Law</div>
