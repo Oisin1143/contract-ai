@@ -1,0 +1,364 @@
+/* src/DueDiligence.css
+   Styles for the Due Diligence feature.
+   Imported from App.jsx so it applies only when the DD view is active. */
+
+.dd-root {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 48px 48px;
+}
+
+/* ── Input layout ────────────────────────────────────── */
+.dd-input-row {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dd-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid rgba(200, 180, 120, 0.18);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dd-mode-btn {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: none;
+  color: rgba(232, 224, 208, 0.5);
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.dd-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8e0d0;
+}
+.dd-mode-btn.active {
+  background: linear-gradient(
+    135deg,
+    rgba(201, 168, 76, 0.22) 0%,
+    rgba(232, 217, 138, 0.22) 100%
+  );
+  color: #e8d98a;
+}
+.dd-mode-explainer {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgba(232, 224, 208, 0.55);
+  font-style: italic;
+  padding: 2px 4px;
+}
+
+/* ── File upload ─────────────────────────────────────── */
+.dd-upload {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.dd-upload-btn {
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(200, 180, 120, 0.35);
+  border-radius: 3px;
+  color: rgba(232, 217, 138, 0.85);
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dd-upload-btn:hover:not(:disabled) {
+  border-color: rgba(232, 217, 138, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+.dd-upload-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dd-filename {
+  font-size: 12px;
+  color: rgba(100, 220, 120, 0.75);
+  letter-spacing: 0.04em;
+}
+
+.dd-or {
+  font-size: 11px;
+  text-align: center;
+  color: rgba(232, 224, 208, 0.3);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 0;
+}
+
+.dd-textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 180, 120, 0.18);
+  border-radius: 3px;
+  color: #e8e0d0;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  width: 100%;
+  min-height: 200px;
+  transition: border-color 0.2s;
+}
+.dd-textarea:focus {
+  border-color: rgba(232, 217, 138, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+}
+.dd-textarea::placeholder {
+  color: rgba(232, 224, 208, 0.22);
+}
+
+.dd-error {
+  color: #e87d7d;
+  font-size: 13px;
+  padding: 4px 2px;
+}
+
+/* ── Results layout ──────────────────────────────────── */
+.dd-results {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dd-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(200, 180, 120, 0.12);
+}
+.dd-results-title {
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+  color: #e8d98a;
+  letter-spacing: 0.02em;
+}
+.dd-results-sub {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232, 217, 138, 0.45);
+  margin-top: 4px;
+}
+.dd-reset-btn {
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(200, 180, 120, 0.25);
+  border-radius: 3px;
+  color: rgba(232, 217, 138, 0.75);
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.dd-reset-btn:hover {
+  border-color: rgba(232, 217, 138, 0.5);
+  color: #e8d98a;
+}
+
+/* Overall risk card */
+.dd-overall-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(200, 180, 120, 0.15);
+  border-radius: 3px;
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 28px;
+  align-items: center;
+}
+.dd-overall-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(232, 217, 138, 0.45);
+}
+.dd-overall-risk {
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.dd-overall-summary {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(232, 224, 208, 0.8);
+}
+
+/* Two-pane split */
+.dd-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.dd-pane-title {
+  font-family: "Playfair Display", serif;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232, 217, 138, 0.55);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(200, 180, 120, 0.12);
+}
+
+/* Heatmap pane */
+.dd-contract-text {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(200, 180, 120, 0.1);
+  border-radius: 3px;
+  padding: 20px 22px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: rgba(232, 224, 208, 0.72);
+  max-height: 75vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "Georgia", "DM Sans", serif;
+}
+.dd-mark {
+  padding: 1px 2px;
+  border-radius: 1px;
+  color: #f1e8d4;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.dd-mark:hover {
+  filter: brightness(1.3);
+}
+.dd-mark-active {
+  filter: brightness(1.5);
+  outline: 1px solid rgba(232, 217, 138, 0.6);
+}
+
+/* Categories pane */
+.dd-categories-pane {
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.dd-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dd-category {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(200, 180, 120, 0.12);
+  border-radius: 3px;
+  padding: 14px 16px;
+}
+.dd-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(200, 180, 120, 0.08);
+}
+.dd-category-name {
+  font-family: "Playfair Display", serif;
+  font-size: 15px;
+  color: #e8d98a;
+  letter-spacing: 0.01em;
+}
+.dd-category-risk {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border: 1px solid;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.dd-no-findings {
+  font-size: 12px;
+  color: rgba(232, 224, 208, 0.35);
+  font-style: italic;
+  padding: 4px 0;
+}
+.dd-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dd-finding {
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(200, 180, 120, 0.08);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dd-finding:hover {
+  border-color: rgba(232, 217, 138, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+}
+.dd-finding-active {
+  border-color: rgba(232, 217, 138, 0.5) !important;
+  background: rgba(232, 217, 138, 0.05) !important;
+}
+.dd-finding-issue {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #e8e0d0;
+  margin-bottom: 6px;
+}
+.dd-finding-excerpt {
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(232, 224, 208, 0.55);
+  padding: 6px 10px;
+  border-left: 2px solid rgba(200, 180, 120, 0.3);
+  margin: 6px 0 10px;
+  line-height: 1.55;
+}
+.dd-finding-section {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(232, 224, 208, 0.7);
+  margin-top: 6px;
+}
+.dd-finding-label {
+  color: rgba(232, 217, 138, 0.65);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* Collapse to single column on narrow screens */
+@media (max-width: 960px) {
+  .dd-split {
+    grid-template-columns: 1fr;
+  }
+  .dd-overall-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .dd-contract-text,
+  .dd-categories-pane {
+    max-height: none;
+  }
+}

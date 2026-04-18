@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import DueDiligence from "./DueDiligence";
+import "./DueDiligence.css";
 
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');`;
 
@@ -23,6 +25,10 @@ const styles = `
   .live-badge { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(100,220,120,0.7); border: 1px solid rgba(100,220,120,0.25); padding: 4px 10px; border-radius: 2px; display: flex; align-items: center; gap: 5px; }
   .live-dot { width: 5px; height: 5px; background: #64dc78; border-radius: 50%; animation: pulse 1.8s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .arb-nav { display: flex; gap: 2px; border: 1px solid rgba(200,180,120,0.18); border-radius: 3px; overflow: hidden; }
+  .arb-nav-btn { padding: 8px 16px; background: transparent; border: none; color: rgba(232,224,208,0.5); font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .arb-nav-btn:hover { background: rgba(255,255,255,0.04); color: #e8e0d0; }
+  .arb-nav-btn.active { background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(232,217,138,0.18)); color: #e8d98a; }
   main {
     position: relative; z-index: 1;
     display: grid; grid-template-columns: 1fr 1fr; gap: 0;
@@ -193,6 +199,7 @@ function getProbColor(pct) {
 }
 
 export default function App() {
+  const [view,         setView]         = useState("dispute"); // "dispute" | "dd"
   const [contractText, setContractText] = useState("");
   const [disputeDesc,  setDisputeDesc]  = useState("");
   const [results,      setResults]      = useState(null);
@@ -309,11 +316,32 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
       <header>
         <div className="logo">
           <div className="logo-title">ARBITRER</div>
-          <div className="logo-sub">Contract Dispute Analyser · UK Law</div>
+          <div className="logo-sub">
+            {view === "dispute"
+              ? "Contract Dispute Analyser · UK Law"
+              : "Contract Due Diligence · UK Law"}
+          </div>
+        </div>
+        <div className="arb-nav">
+          <button
+            className={`arb-nav-btn ${view === "dispute" ? "active" : ""}`}
+            onClick={() => setView("dispute")}
+          >
+            Dispute Analyser
+          </button>
+          <button
+            className={`arb-nav-btn ${view === "dd" ? "active" : ""}`}
+            onClick={() => setView("dd")}
+          >
+            Due Diligence
+          </button>
         </div>
         <div className="live-badge"><div className="live-dot" />Groq AI · UK Law</div>
       </header>
 
+      {view === "dd" && <DueDiligence />}
+
+      {view === "dispute" && (
       <main>
         {/* LEFT */}
         <div className="left-panel">
@@ -438,6 +466,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
           })}
         </div>
       </main>
+      )}
     </div>
   );
 }
