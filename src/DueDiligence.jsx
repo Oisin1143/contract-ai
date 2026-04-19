@@ -7,6 +7,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { extractTextFromFile } from "./extractText";
+import NegotiateModal from "./NegotiateModal";
 
 const RISK_COLORS = {
   HIGH: "#e87d7d",
@@ -30,6 +31,7 @@ export default function DueDiligence() {
   const [fileName, setFileName] = useState("");
   const [results, setResults] = useState(null);
   const [activeFinding, setActiveFinding] = useState(null); // {categoryIdx, findingIdx}
+  const [negotiating, setNegotiating] = useState(null); // { finding, categoryName }
   const fileInputRef = useRef(null);
   const contractRef = useRef(null);
 
@@ -391,6 +393,20 @@ export default function DueDiligence() {
                               <span className="dd-finding-label">Recommendation:</span>{" "}
                               {f.recommendation}
                             </div>
+                            {(cat.risk === "HIGH" || cat.risk === "MEDIUM") && (
+                              <button
+                                className="dd-negotiate-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNegotiating({
+                                    finding: f,
+                                    categoryName: cat.name,
+                                  });
+                                }}
+                              >
+                                💼 Generate counter-clause &amp; email
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -403,6 +419,16 @@ export default function DueDiligence() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Negotiate clause modal */}
+      {negotiating && (
+        <NegotiateModal
+          finding={negotiating.finding}
+          mode={mode}
+          contractType={negotiating.categoryName}
+          onClose={() => setNegotiating(null)}
+        />
       )}
     </div>
   );
