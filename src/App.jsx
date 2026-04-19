@@ -25,6 +25,25 @@ const styles = `
   .live-badge { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(100,220,120,0.7); border: 1px solid rgba(100,220,120,0.25); padding: 4px 10px; border-radius: 2px; display: flex; align-items: center; gap: 5px; }
   .live-dot { width: 5px; height: 5px; background: #64dc78; border-radius: 50%; animation: pulse 1.8s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .ml-card { border: 1px solid rgba(125,191,232,0.4); border-radius: 4px; padding: 18px 20px; background: rgba(125,191,232,0.04); display: flex; flex-direction: column; gap: 14px; animation: fadeUp 0.4s ease forwards; }
+  .ml-header { display: flex; align-items: center; gap: 10px; }
+  .ml-badge { font-size: 9px; letter-spacing: 0.18em; padding: 3px 8px; border: 1px solid rgba(125,191,232,0.5); border-radius: 2px; color: #7dbfe8; font-weight: 600; }
+  .ml-title { font-family: 'Playfair Display', serif; font-size: 16px; color: #e8d98a; }
+  .ml-sub { font-size: 12px; line-height: 1.5; color: rgba(232,224,208,0.65); }
+  .ml-bars { display: flex; flex-direction: column; gap: 10px; }
+  .ml-bar-row { display: flex; flex-direction: column; gap: 4px; }
+  .ml-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: rgba(232,224,208,0.75); }
+  .ml-pct { font-weight: 600; }
+  .ml-bar-bg { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+  .ml-bar-fill { height: 100%; transition: width 0.6s ease; }
+  .ml-features { padding-top: 12px; border-top: 1px solid rgba(200,180,120,0.1); }
+  .ml-features-title { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(232,217,138,0.5); margin-bottom: 8px; }
+  .ml-feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .ml-feature { display: flex; flex-direction: column; gap: 2px; }
+  .ml-feature-wide { grid-column: 1 / -1; }
+  .ml-feature-key { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(232,224,208,0.45); }
+  .ml-feature-val { font-size: 12.5px; color: #e8e0d0; }
+  .ml-disclaimer { font-size: 10.5px; font-style: italic; color: rgba(232,224,208,0.4); padding-top: 8px; border-top: 1px solid rgba(200,180,120,0.08); }
   .arb-nav { display: flex; gap: 2px; border: 1px solid rgba(200,180,120,0.18); border-radius: 3px; overflow: hidden; }
   .arb-nav-btn { padding: 8px 16px; background: transparent; border: none; color: rgba(232,224,208,0.5); font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
   .arb-nav-btn:hover { background: rgba(255,255,255,0.04); color: #e8e0d0; }
@@ -209,6 +228,7 @@ export default function App() {
   const [loadingStep,  setLoadingStep]  = useState("");
   const [error,        setError]        = useState("");
   const [animPct,      setAnimPct]      = useState({ claimant: 0, defendant: 0 });
+  const [mlPrediction, setMlPrediction] = useState(null);
   const contractRef = useRef(null);
 
   useEffect(() => {
@@ -234,6 +254,7 @@ export default function App() {
     setLoading(true);
     setResults(null);
     setProbability(null);
+    setMlPrediction(null);
     setBailiiLinks([]);
     setLoadingStep("Contacting server…");
 
@@ -274,12 +295,21 @@ Defendant win probability: [Y]%
 Reasoning: [2-3 sentences explaining the split based on the strength of arguments and applicable UK case law.]`;
 
     try {
-      // ── Call our Vercel serverless function — same origin, API key never touches the browser ──
-      const response = await fetch("/api/analyse", {
+      // ── Fire LLM analysis + ML prediction in PARALLEL ──
+      // The ML call typically returns in <500ms; the LLM call takes
+      // 3-10s. We don't make the user wait sequentially.
+      const llmPromise = fetch("/api/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contractText, disputeDesc }),
       });
+      const mlPromise = fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractText, disputeDesc }),
+      }).catch(() => null); // ML failures are non-fatal — UI still works
+
+      const response = await llmPromise;
 
       if (!response.ok) {
         const err = await response.json();
@@ -301,6 +331,17 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
       });
       setProbability(parseProbability(fullText));
       setBailiiLinks(data.bailiiLinks || []);
+
+      // Resolve the ML prediction (may already be done)
+      const mlResponse = await mlPromise;
+      if (mlResponse && mlResponse.ok) {
+        try {
+          const mlData = await mlResponse.json();
+          setMlPrediction(mlData);
+        } catch {
+          // ignore parse failures — non-fatal
+        }
+      }
 
     } catch (e) {
       console.error(e);
@@ -420,6 +461,62 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
                 {probability.reasoning && (
                   <div className="prob-reasoning">{probability.reasoning}</div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {mlPrediction && (
+            <div className="ml-card">
+              <div className="ml-header">
+                <span className="ml-badge">🧠 ML MODEL</span>
+                <span className="ml-title">Empirical Prediction</span>
+              </div>
+              <div className="ml-sub">
+                Based on <strong>{mlPrediction.model.training_cases.toLocaleString()}</strong> UK contract dispute judgments scraped from BAILII. Model accuracy on a held-out test set: <strong>{Math.round(mlPrediction.model.training_accuracy * 100)}%</strong>.
+              </div>
+              <div className="ml-bars">
+                {[
+                  { label: "Claimant",  pct: mlPrediction.claimant_probability },
+                  { label: "Defendant", pct: mlPrediction.defendant_probability },
+                ].map(({ label, pct }) => (
+                  <div className="ml-bar-row" key={label}>
+                    <div className="ml-bar-label">
+                      <span>{label}</span>
+                      <span className="ml-pct" style={{ color: getProbColor(pct) }}>{pct}%</span>
+                    </div>
+                    <div className="ml-bar-bg">
+                      <div className="ml-bar-fill" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${getProbColor(pct)}99, ${getProbColor(pct)})` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="ml-features">
+                <div className="ml-features-title">What the model detected</div>
+                <div className="ml-feature-grid">
+                  <div className="ml-feature">
+                    <span className="ml-feature-key">Breach type</span>
+                    <span className="ml-feature-val">{mlPrediction.detected_features.breach_type}</span>
+                  </div>
+                  <div className="ml-feature">
+                    <span className="ml-feature-key">Contract type</span>
+                    <span className="ml-feature-val">{mlPrediction.detected_features.contract_type}</span>
+                  </div>
+                  {mlPrediction.detected_features.damages_claimed_gbp > 0 && (
+                    <div className="ml-feature">
+                      <span className="ml-feature-key">Damages claimed</span>
+                      <span className="ml-feature-val">£{mlPrediction.detected_features.damages_claimed_gbp.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {mlPrediction.detected_features.clauses_detected.length > 0 && (
+                    <div className="ml-feature ml-feature-wide">
+                      <span className="ml-feature-key">Clauses detected</span>
+                      <span className="ml-feature-val">{mlPrediction.detected_features.clauses_detected.join(" · ")}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="ml-disclaimer">
+                Statistical baseline trained on historical case patterns. Not legal advice.
               </div>
             </div>
           )}

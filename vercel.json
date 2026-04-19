@@ -2,6 +2,17 @@
   "functions": {
     "api/analyse.js": {
       "maxDuration": 30
+    },
+    "api/due-diligence.js": {
+      "maxDuration": 30
+    },
+    "api/negotiate.js": {
+      "maxDuration": 30
+    },
+    "api/predict.py": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "api/models/**"
     }
   }
 }
