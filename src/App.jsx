@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import DueDiligence from "./DueDiligence";
 import "./DueDiligence.css";
+import AuthButton from "./AuthButton";
+import MyCases from "./MyCases";
+import { supabase } from "./supabase";
 
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');`;
 
@@ -49,6 +52,59 @@ const styles = `
   .div-icon { font-size: 14px; }
   .div-title { font-family: 'Playfair Display', serif; font-size: 14px; color: #e8c87d; letter-spacing: 0.02em; font-weight: 600; }
   .div-body { font-size: 12.5px; line-height: 1.55; color: rgba(232,224,208,0.85); }
+
+  /* ── Header: right-side grouping ─────────────────── */
+  .header-right { display: flex; align-items: center; gap: 14px; }
+
+  /* ── Auth button ─────────────────────────────────── */
+  .auth-btn-in { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(200,180,120,0.25); border-radius: 3px; color: #e8e0d0; font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 0.06em; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .auth-btn-in:hover { border-color: rgba(232,217,138,0.55); background: rgba(255,255,255,0.06); }
+  .auth-wrap { position: relative; }
+  .auth-avatar-btn { padding: 0; background: transparent; border: 1px solid rgba(200,180,120,0.3); border-radius: 50%; cursor: pointer; width: 34px; height: 34px; overflow: hidden; transition: border-color 0.15s; }
+  .auth-avatar-btn:hover { border-color: rgba(232,217,138,0.65); }
+  .auth-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .auth-avatar-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #c9a84c, #e8d98a); color: #0a0a0a; font-weight: 700; font-size: 13px; font-family: 'Playfair Display', serif; }
+  .auth-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 220px; background: #0f0f0f; border: 1px solid rgba(200,180,120,0.25); border-radius: 3px; padding: 6px; z-index: 50; box-shadow: 0 14px 30px rgba(0,0,0,0.5); }
+  .auth-menu-email { padding: 10px 12px 8px; font-size: 11.5px; color: rgba(232,224,208,0.55); letter-spacing: 0.02em; word-break: break-all; }
+  .auth-menu-divider { height: 1px; background: rgba(200,180,120,0.12); margin: 4px 0; }
+  .auth-menu-item { width: 100%; padding: 10px 12px; background: transparent; border: none; text-align: left; color: #e8e0d0; font-family: 'DM Sans', sans-serif; font-size: 12.5px; cursor: pointer; border-radius: 2px; transition: background 0.12s; }
+  .auth-menu-item:hover { background: rgba(232,217,138,0.08); color: #e8d98a; }
+
+  /* ── Save Case button ────────────────────────────── */
+  .save-case-row { display: flex; justify-content: flex-end; }
+  .save-case-hint { justify-content: center; font-size: 12px; color: rgba(232,224,208,0.5); font-style: italic; padding: 4px 0; }
+  .save-case-btn { padding: 10px 20px; background: rgba(125,191,232,0.08); border: 1px solid rgba(125,191,232,0.4); border-radius: 3px; color: #7dbfe8; font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+  .save-case-btn:hover:not(:disabled) { background: rgba(125,191,232,0.15); border-color: rgba(125,191,232,0.65); }
+  .save-case-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+  /* ── MyCases view ────────────────────────────────── */
+  .mc-root { max-width: 980px; margin: 0 auto; padding: 40px 48px 80px; position: relative; z-index: 1; }
+  .mc-header { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 22px; border-bottom: 1px solid rgba(200,180,120,0.12); margin-bottom: 26px; }
+  .mc-title { font-family: 'Playfair Display', serif; font-size: 28px; color: #e8d98a; letter-spacing: 0.01em; }
+  .mc-sub { font-size: 12px; letter-spacing: 0.08em; color: rgba(232,224,208,0.5); margin-top: 4px; }
+  .mc-refresh { padding: 8px 14px; background: transparent; border: 1px solid rgba(200,180,120,0.25); border-radius: 3px; color: rgba(232,217,138,0.75); font-family: 'DM Sans', sans-serif; font-size: 11.5px; letter-spacing: 0.08em; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .mc-refresh:hover:not(:disabled) { border-color: rgba(232,217,138,0.55); color: #e8d98a; }
+  .mc-refresh:disabled { opacity: 0.5; cursor: wait; }
+  .mc-error { padding: 12px 16px; background: rgba(232,125,125,0.08); border: 1px solid rgba(232,125,125,0.3); border-radius: 3px; color: #f0a8a8; font-size: 13px; margin-bottom: 16px; }
+  .mc-empty { padding: 70px 20px; text-align: center; color: rgba(232,224,208,0.55); border: 1px dashed rgba(200,180,120,0.2); border-radius: 3px; }
+  .mc-empty-icon { font-size: 38px; margin-bottom: 14px; }
+  .mc-empty-title { font-family: 'Playfair Display', serif; font-size: 18px; color: #e8d98a; margin-bottom: 8px; }
+  .mc-empty-sub { font-size: 13px; line-height: 1.6; max-width: 440px; margin: 0 auto; }
+  .mc-list { display: flex; flex-direction: column; gap: 10px; }
+  .mc-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(200,180,120,0.12); border-radius: 3px; transition: border-color 0.15s, background 0.15s; }
+  .mc-item:hover { border-color: rgba(232,217,138,0.3); background: rgba(255,255,255,0.035); }
+  .mc-item-main { flex: 1; min-width: 0; cursor: pointer; }
+  .mc-item-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .mc-badge { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; font-weight: 600; }
+  .mc-badge-dispute { background: rgba(201,168,76,0.15); color: #e8d98a; border: 1px solid rgba(232,217,138,0.3); }
+  .mc-badge-dd { background: rgba(125,191,232,0.15); color: #7dbfe8; border: 1px solid rgba(125,191,232,0.3); }
+  .mc-item-date { font-size: 11px; color: rgba(232,224,208,0.45); letter-spacing: 0.04em; }
+  .mc-item-title { font-size: 14px; color: #e8e0d0; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mc-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .mc-open-btn { padding: 7px 14px; background: rgba(232,217,138,0.08); border: 1px solid rgba(232,217,138,0.35); border-radius: 2px; color: #e8d98a; font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0.08em; cursor: pointer; transition: background 0.15s; }
+  .mc-open-btn:hover { background: rgba(232,217,138,0.18); }
+  .mc-delete-btn { width: 32px; height: 32px; background: transparent; border: 1px solid rgba(200,180,120,0.2); border-radius: 2px; color: rgba(232,224,208,0.4); cursor: pointer; transition: border-color 0.15s, color 0.15s; font-size: 14px; }
+  .mc-delete-btn:hover { border-color: rgba(232,125,125,0.5); color: #e87d7d; }
   .arb-nav { display: flex; gap: 2px; border: 1px solid rgba(200,180,120,0.18); border-radius: 3px; overflow: hidden; }
   .arb-nav-btn { padding: 8px 16px; background: transparent; border: none; color: rgba(232,224,208,0.5); font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
   .arb-nav-btn:hover { background: rgba(255,255,255,0.04); color: #e8e0d0; }
@@ -223,7 +279,9 @@ function getProbColor(pct) {
 }
 
 export default function App() {
-  const [view,         setView]         = useState("dispute"); // "dispute" | "dd"
+  const [view,         setView]         = useState("dispute"); // "dispute" | "dd" | "mycases"
+  const [user,         setUser]         = useState(null);
+  const [saveStatus,   setSaveStatus]   = useState(""); // "", "saving", "saved", "error"
   const [contractText, setContractText] = useState("");
   const [disputeDesc,  setDisputeDesc]  = useState("");
   const [results,      setResults]      = useState(null);
@@ -250,6 +308,61 @@ export default function App() {
       setAnimPct({ claimant: 0, defendant: 0 });
     }
   }, [probability]);
+
+  // ── Auth: subscribe to sign-in / sign-out events ──
+  useEffect(() => {
+    if (!supabase) return;
+    // Load current session on mount
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    // Subscribe to future changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // ── Save the current dispute analysis to Supabase ──
+  const saveDisputeCase = async () => {
+    if (!supabase || !user) return;
+    if (!results || !probability) return;
+    setSaveStatus("saving");
+    // Derive a friendly title: first 60 chars of the dispute
+    const title = disputeDesc.trim().slice(0, 60) + (disputeDesc.length > 60 ? "…" : "");
+    const { error: insErr } = await supabase.from("saved_cases").insert({
+      user_id: user.id,
+      case_type: "dispute",
+      title,
+      input_data: { contractText, disputeDesc },
+      result_data: { results, probability, bailiiLinks, mlPrediction },
+    });
+    if (insErr) {
+      console.error(insErr);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus(""), 3000);
+    } else {
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(""), 2000);
+    }
+  };
+
+  // ── Load a saved case back into the appropriate view ──
+  const openSavedCase = (saved) => {
+    if (saved.case_type === "dispute") {
+      setContractText(saved.input_data?.contractText || "");
+      setDisputeDesc(saved.input_data?.disputeDesc || "");
+      setResults(saved.result_data?.results || null);
+      setProbability(saved.result_data?.probability || null);
+      setBailiiLinks(saved.result_data?.bailiiLinks || []);
+      setMlPrediction(saved.result_data?.mlPrediction || null);
+      setView("dispute");
+    } else {
+      // DD cases: switch view and let DueDiligence handle re-hydration
+      // (not wiring DD restore in this pass — dispute first, DD later)
+      setView("dd");
+    }
+  };
 
   const analyse = async () => {
     if (!contractText.trim()) return setError("Please paste the contract text.");
@@ -365,7 +478,9 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
           <div className="logo-sub">
             {view === "dispute"
               ? "Contract Dispute Analyser · UK Law"
-              : "Contract Due Diligence · UK Law"}
+              : view === "dd"
+              ? "Contract Due Diligence · UK Law"
+              : "Saved Cases"}
           </div>
         </div>
         <div className="arb-nav">
@@ -381,11 +496,23 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
           >
             Due Diligence
           </button>
+          {user && (
+            <button
+              className={`arb-nav-btn ${view === "mycases" ? "active" : ""}`}
+              onClick={() => setView("mycases")}
+            >
+              My Cases
+            </button>
+          )}
         </div>
-        <div className="live-badge"><div className="live-dot" />Groq AI · UK Law</div>
+        <div className="header-right">
+          <div className="live-badge"><div className="live-dot" />Groq AI · UK Law</div>
+          {supabase && <AuthButton user={user} />}
+        </div>
       </header>
 
       {view === "dd" && <DueDiligence />}
+      {view === "mycases" && <MyCases user={user} onOpen={openSavedCase} />}
 
       {view === "dispute" && (
       <main>
@@ -551,6 +678,27 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
               <div className="ml-disclaimer">
                 Statistical baseline trained on historical case patterns. Not legal advice.
               </div>
+            </div>
+          )}
+
+          {results && user && (
+            <div className="save-case-row">
+              <button
+                className="save-case-btn"
+                onClick={saveDisputeCase}
+                disabled={saveStatus === "saving" || saveStatus === "saved"}
+              >
+                {saveStatus === "saving" && "Saving…"}
+                {saveStatus === "saved"  && "✓ Saved to My Cases"}
+                {saveStatus === "error"  && "Error — try again"}
+                {!saveStatus             && "💾 Save to My Cases"}
+              </button>
+            </div>
+          )}
+
+          {results && !user && supabase && (
+            <div className="save-case-row save-case-hint">
+              Sign in at the top right to save this analysis to your account.
             </div>
           )}
 
