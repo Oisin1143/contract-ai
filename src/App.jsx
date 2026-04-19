@@ -44,6 +44,11 @@ const styles = `
   .ml-feature-key { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(232,224,208,0.45); }
   .ml-feature-val { font-size: 12.5px; color: #e8e0d0; }
   .ml-disclaimer { font-size: 10.5px; font-style: italic; color: rgba(232,224,208,0.4); padding-top: 8px; border-top: 1px solid rgba(200,180,120,0.08); }
+  .divergence-strip { border: 1px solid rgba(232,200,125,0.45); border-left: 3px solid #e8c87d; border-radius: 4px; padding: 14px 18px; background: rgba(232,200,125,0.06); display: flex; flex-direction: column; gap: 8px; animation: fadeUp 0.4s ease forwards; }
+  .div-header { display: flex; align-items: center; gap: 10px; }
+  .div-icon { font-size: 14px; }
+  .div-title { font-family: 'Playfair Display', serif; font-size: 14px; color: #e8c87d; letter-spacing: 0.02em; font-weight: 600; }
+  .div-body { font-size: 12.5px; line-height: 1.55; color: rgba(232,224,208,0.85); }
   .arb-nav { display: flex; gap: 2px; border: 1px solid rgba(200,180,120,0.18); border-radius: 3px; overflow: hidden; }
   .arb-nav-btn { padding: 8px 16px; background: transparent; border: none; color: rgba(232,224,208,0.5); font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
   .arb-nav-btn:hover { background: rgba(255,255,255,0.04); color: #e8e0d0; }
@@ -441,7 +446,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
             <div className="prob-card">
               <div className="prob-header">
                 <span style={{ fontSize: 16 }}>📊</span>
-                <span className="prob-title">Overall Win Probability</span>
+                <span className="prob-title">Legal Merits Assessment</span>
               </div>
               <div className="prob-body">
                 {[
@@ -465,11 +470,39 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
             </div>
           )}
 
+          {mlPrediction && probability && (() => {
+            // Compare LLM vs ML claimant probability — surface the gap
+            const llmClaimant = probability.claimant;
+            const mlClaimant  = mlPrediction.claimant_probability;
+            const delta = Math.abs(llmClaimant - mlClaimant);
+            if (delta < 15) return null;
+
+            const llmFavours = llmClaimant > 50 ? "claimant" : "defendant";
+            const mlFavours  = mlClaimant  > 50 ? "claimant" : "defendant";
+            const sameDirection = llmFavours === mlFavours;
+
+            return (
+              <div className="divergence-strip">
+                <div className="div-header">
+                  <span className="div-icon">⚠️</span>
+                  <span className="div-title">Notable divergence: {delta.toFixed(1)} points</span>
+                </div>
+                <div className="div-body">
+                  {sameDirection ? (
+                    <>Both signals favour the <strong>{llmFavours}</strong>, but the strength of conviction differs significantly. Treat the prediction as directional rather than precise.</>
+                  ) : (
+                    <>The <strong>legal merits</strong> favour the <strong>{llmFavours}</strong>, but historically <strong>{mlFavours}s win</strong> in cases with this profile. Cases like this often settle rather than going to judgment — the litigation risk is real even when the argument is strong.</>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {mlPrediction && (
             <div className="ml-card">
               <div className="ml-header">
                 <span className="ml-badge">🧠 ML MODEL</span>
-                <span className="ml-title">Empirical Prediction</span>
+                <span className="ml-title">Historical Outcome Pattern</span>
               </div>
               <div className="ml-sub">
                 Based on <strong>{mlPrediction.model.training_cases.toLocaleString()}</strong> UK contract dispute judgments scraped from BAILII. Model accuracy on a held-out test set: <strong>{Math.round(mlPrediction.model.training_accuracy * 100)}%</strong>.
