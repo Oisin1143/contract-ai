@@ -5,9 +5,10 @@
 // - Renders: executive summary, categorised risk list, and a heatmap
 //   that highlights each risky passage directly in the contract text.
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { extractTextFromFile } from "./extractText";
 import NegotiateModal from "./NegotiateModal";
+import { supabase } from "./supabase";
 
 const RISK_COLORS = {
   HIGH: "#e87d7d",
@@ -22,7 +23,7 @@ const RISK_BG = {
   LOW: "rgba(125,191,232,0.15)",
 };
 
-export default function DueDiligence() {
+export default function DueDiligence({ user }) {
   const [mode, setMode] = useState("presigning"); // "presigning" | "ma"
   const [contractText, setContractText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,8 +33,49 @@ export default function DueDiligence() {
   const [results, setResults] = useState(null);
   const [activeFinding, setActiveFinding] = useState(null); // {categoryIdx, findingIdx}
   const [negotiating, setNegotiating] = useState(null); // { finding, categoryName }
+  const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved", "error"
   const fileInputRef = useRef(null);
   const contractRef = useRef(null);
+
+  // ── Restore a saved DD case if App.jsx handed one to us via sessionStorage ──
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("arbitrer_dd_restore");
+      if (!raw) return;
+      sessionStorage.removeItem("arbitrer_dd_restore");
+      const saved = JSON.parse(raw);
+      if (saved.case_type !== "dd") return;
+      setMode(saved.input_data?.mode || "presigning");
+      setContractText(saved.input_data?.contractText || "");
+      setFileName(saved.input_data?.fileName || "");
+      setResults(saved.result_data || null);
+    } catch { /* no-op */ }
+  }, []);
+
+  // ── Save the current DD review to Supabase ──
+  const saveDDCase = async () => {
+    if (!supabase || !user || !results) return;
+    setSaveStatus("saving");
+    const title =
+      (results.summary || "").slice(0, 60) +
+      ((results.summary || "").length > 60 ? "…" : "") ||
+      `Due diligence — ${mode === "ma" ? "M&A" : "Pre-signing"}`;
+    const { error: insErr } = await supabase.from("saved_cases").insert({
+      user_id: user.id,
+      case_type: "dd",
+      title,
+      input_data: { contractText, mode, fileName },
+      result_data: results,
+    });
+    if (insErr) {
+      console.error(insErr);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus(""), 3000);
+    } else {
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(""), 2000);
+    }
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -291,17 +333,37 @@ export default function DueDiligence() {
                   : "Pre-Signing Contract Review"}
               </div>
             </div>
-            <button
-              className="dd-reset-btn"
-              onClick={() => {
-                setResults(null);
-                setContractText("");
-                setFileName("");
-                setActiveFinding(null);
-              }}
-            >
-              ← Review another contract
-            </button>
+            <div className="dd-header-actions">
+              {user && supabase && (
+                <button
+                  className="dd-save-btn"
+                  onClick={saveDDCase}
+                  disabled={saveStatus === "saving" || saveStatus === "saved"}
+                >
+                  {saveStatus === "saving" && "Saving…"}
+                  {saveStatus === "saved"  && "✓ Saved"}
+                  {saveStatus === "error"  && "Error — try again"}
+                  {!saveStatus             && "💾 Save to My Cases"}
+                </button>
+              )}
+              {!user && supabase && (
+                <span className="dd-save-hint">
+                  Sign in to save this review
+                </span>
+              )}
+              <button
+                className="dd-reset-btn"
+                onClick={() => {
+                  setResults(null);
+                  setContractText("");
+                  setFileName("");
+                  setActiveFinding(null);
+                  setSaveStatus("");
+                }}
+              >
+                ← Review another contract
+              </button>
+            </div>
           </div>
 
           {/* Overall risk + summary */}

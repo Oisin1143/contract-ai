@@ -627,3 +627,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── DD results header actions (save + reset) ────────── */
+.dd-header-actions { display: flex; align-items: center; gap: 12px; }
+.dd-save-btn {
+  padding: 9px 16px;
+  background: rgba(125,191,232,0.08);
+  border: 1px solid rgba(125,191,232,0.4);
+  border-radius: 3px;
+  color: #7dbfe8;
+  font-family: "DM Sans", sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dd-save-btn:hover:not(:disabled) {
+  background: rgba(125,191,232,0.15);
+  border-color: rgba(125,191,232,0.65);
+}
+.dd-save-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.dd-save-hint {
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(232,224,208,0.5);
+}

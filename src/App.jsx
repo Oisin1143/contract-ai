@@ -350,16 +350,29 @@ export default function App() {
   // ── Load a saved case back into the appropriate view ──
   const openSavedCase = (saved) => {
     if (saved.case_type === "dispute") {
-      setContractText(saved.input_data?.contractText || "");
+      const ct = saved.input_data?.contractText || "";
+      setContractText(ct);
       setDisputeDesc(saved.input_data?.disputeDesc || "");
       setResults(saved.result_data?.results || null);
       setProbability(saved.result_data?.probability || null);
       setBailiiLinks(saved.result_data?.bailiiLinks || []);
       setMlPrediction(saved.result_data?.mlPrediction || null);
       setView("dispute");
-    } else {
-      // DD cases: switch view and let DueDiligence handle re-hydration
-      // (not wiring DD restore in this pass — dispute first, DD later)
+      // The contract input is a contentEditable div, not a textarea — React
+      // state alone doesn't populate its visible content. Write directly via
+      // the ref on the next tick (after the view has switched).
+      setTimeout(() => {
+        if (contractRef.current) contractRef.current.textContent = ct;
+      }, 0);
+    } else if (saved.case_type === "dd") {
+      // Switch to DD and pass the saved payload via sessionStorage — the
+      // DD component reads it on mount (see DueDiligence.jsx change).
+      try {
+        sessionStorage.setItem(
+          "arbitrer_dd_restore",
+          JSON.stringify(saved)
+        );
+      } catch { /* sessionStorage disabled — user will see empty state */ }
       setView("dd");
     }
   };
@@ -511,7 +524,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
         </div>
       </header>
 
-      {view === "dd" && <DueDiligence />}
+      {view === "dd" && <DueDiligence user={user} />}
       {view === "mycases" && <MyCases user={user} onOpen={openSavedCase} />}
 
       {view === "dispute" && (
