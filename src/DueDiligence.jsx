@@ -8,6 +8,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { extractTextFromFile } from "./extractText";
 import NegotiateModal from "./NegotiateModal";
+import AudienceToggle from "./AudienceToggle";
 import { supabase } from "./supabase";
 
 const RISK_COLORS = {
@@ -34,6 +35,8 @@ export default function DueDiligence({ user }) {
   const [activeFinding, setActiveFinding] = useState(null); // {categoryIdx, findingIdx}
   const [negotiating, setNegotiating] = useState(null); // { finding, categoryName }
   const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved", "error"
+  const [audience, setAudience] = useState("partner");
+  const [rewrittenSummary, setRewrittenSummary] = useState(null); // null = use original
   const fileInputRef = useRef(null);
   const contractRef = useRef(null);
 
@@ -105,6 +108,8 @@ export default function DueDiligence({ user }) {
     setError("");
     setResults(null);
     setActiveFinding(null);
+    setAudience("partner");
+    setRewrittenSummary(null);
 
     if (!contractText || contractText.trim().length < 100) {
       setError("Please paste or upload a contract with at least 100 characters.");
@@ -375,8 +380,19 @@ export default function DueDiligence({ user }) {
             >
               {results.overall_risk}
             </div>
-            <div className="dd-overall-summary">{results.summary}</div>
+            <div className="dd-overall-summary">
+              {rewrittenSummary || results.summary}
+            </div>
           </div>
+
+          {/* Audience toggle — reframes the executive summary */}
+          <AudienceToggle
+            originalAnalysis={results.summary}
+            contextType="dd"
+            activeAudience={audience}
+            setActiveAudience={setAudience}
+            onRewrite={(text) => setRewrittenSummary(text)}
+          />
 
           {/* Two-pane: heatmap + categories */}
           <div className="dd-split">

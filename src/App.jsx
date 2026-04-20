@@ -3,6 +3,7 @@ import DueDiligence from "./DueDiligence";
 import "./DueDiligence.css";
 import AuthButton from "./AuthButton";
 import MyCases from "./MyCases";
+import AudienceToggle from "./AudienceToggle";
 import { supabase } from "./supabase";
 
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');`;
@@ -105,6 +106,19 @@ const styles = `
   .mc-open-btn:hover { background: rgba(232,217,138,0.18); }
   .mc-delete-btn { width: 32px; height: 32px; background: transparent; border: 1px solid rgba(200,180,120,0.2); border-radius: 2px; color: rgba(232,224,208,0.4); cursor: pointer; transition: border-color 0.15s, color 0.15s; font-size: 14px; }
   .mc-delete-btn:hover { border-color: rgba(232,125,125,0.5); color: #e87d7d; }
+
+  /* ── Audience toggle ─────────────────────────────── */
+  .aud-toggle { padding: 14px 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(200,180,120,0.12); border-radius: 3px; display: flex; flex-direction: column; gap: 10px; animation: fadeUp 0.4s ease forwards; }
+  .aud-toggle-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(232,217,138,0.5); }
+  .aud-toggle-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .aud-pill { padding: 10px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(200,180,120,0.18); border-radius: 2px; color: rgba(232,224,208,0.65); cursor: pointer; text-align: center; transition: border-color 0.15s, color 0.15s, background 0.15s; font-family: 'DM Sans', sans-serif; }
+  .aud-pill:hover:not(:disabled) { border-color: rgba(232,217,138,0.4); color: #e8e0d0; }
+  .aud-pill.active { background: rgba(232,217,138,0.08); border-color: rgba(232,217,138,0.6); color: #e8d98a; }
+  .aud-pill:disabled { opacity: 0.5; cursor: wait; }
+  .aud-pill-label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; margin-bottom: 3px; }
+  .aud-pill-sub { font-size: 10px; color: rgba(232,224,208,0.4); letter-spacing: 0.02em; }
+  .aud-status { font-size: 12px; color: rgba(125,191,232,0.75); font-style: italic; }
+  .aud-error { font-size: 12px; color: #e87d7d; }
   .arb-nav { display: flex; gap: 2px; border: 1px solid rgba(200,180,120,0.18); border-radius: 3px; overflow: hidden; }
   .arb-nav-btn { padding: 8px 16px; background: transparent; border: none; color: rgba(232,224,208,0.5); font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
   .arb-nav-btn:hover { background: rgba(255,255,255,0.04); color: #e8e0d0; }
@@ -292,6 +306,8 @@ export default function App() {
   const [error,        setError]        = useState("");
   const [animPct,      setAnimPct]      = useState({ claimant: 0, defendant: 0 });
   const [mlPrediction, setMlPrediction] = useState(null);
+  const [rawAnalysis,  setRawAnalysis]  = useState("");  // original Groq markdown
+  const [audience,     setAudience]     = useState("partner");
   const contractRef = useRef(null);
 
   useEffect(() => {
@@ -386,6 +402,8 @@ export default function App() {
     setResults(null);
     setProbability(null);
     setMlPrediction(null);
+    setRawAnalysis("");
+    setAudience("partner");
     setBailiiLinks([]);
     setLoadingStep("Contacting server…");
 
@@ -460,6 +478,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
         caselaw:   parseSection(fullText, "RELEVANT UK CASE LAW & STATUTES"),
         outcome:   parseSection(fullText, "LIKELY OUTCOME & RISK ASSESSMENT"),
       });
+      setRawAnalysis(fullText);  // keep raw for reframing
       setProbability(parseProbability(fullText));
       setBailiiLinks(data.bailiiLinks || []);
 
@@ -713,6 +732,25 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
             <div className="save-case-row save-case-hint">
               Sign in at the top right to save this analysis to your account.
             </div>
+          )}
+
+          {results && rawAnalysis && (
+            <AudienceToggle
+              originalAnalysis={rawAnalysis}
+              contextType="dispute"
+              activeAudience={audience}
+              setActiveAudience={setAudience}
+              onRewrite={(text) => {
+                // null means revert to original
+                const source = text || rawAnalysis;
+                setResults({
+                  issues:    parseSection(source, "KEY LEGAL ISSUES & BREACH"),
+                  arguments: parseSection(source, "ARGUMENTS FOR BOTH SIDES"),
+                  caselaw:   parseSection(source, "RELEVANT UK CASE LAW & STATUTES"),
+                  outcome:   parseSection(source, "LIKELY OUTCOME & RISK ASSESSMENT"),
+                });
+              }}
+            />
           )}
 
           {results && SECTIONS.map(({ key, icon, title }) => {
