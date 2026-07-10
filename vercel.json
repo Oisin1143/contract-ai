@@ -9,6 +9,12 @@
     "api/negotiate.js": {
       "maxDuration": 30
     },
+    "api/negotiate-chat.js": {
+      "maxDuration": 30
+    },
+    "api/precedents.js": {
+      "maxDuration": 30
+    },
     "api/predict.py": {
       "maxDuration": 30,
       "memory": 1024,

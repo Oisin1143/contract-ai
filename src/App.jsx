@@ -48,6 +48,24 @@ const styles = `
   .ml-feature-key { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(232,224,208,0.45); }
   .ml-feature-val { font-size: 12.5px; color: #e8e0d0; }
   .ml-disclaimer { font-size: 10.5px; font-style: italic; color: rgba(232,224,208,0.4); padding-top: 8px; border-top: 1px solid rgba(200,180,120,0.08); }
+  .prec-card { border: 1px solid rgba(200,180,120,0.3); border-radius: 4px; padding: 18px 20px; background: rgba(200,180,120,0.03); display: flex; flex-direction: column; gap: 14px; animation: fadeUp 0.4s ease forwards; }
+  .prec-header { display: flex; align-items: center; gap: 10px; }
+  .prec-badge { font-size: 9px; letter-spacing: 0.18em; padding: 3px 8px; border: 1px solid rgba(232,217,138,0.5); border-radius: 2px; color: #e8d98a; font-weight: 600; }
+  .prec-title { font-family: 'Playfair Display', serif; font-size: 16px; color: #e8d98a; }
+  .prec-loading { font-size: 12.5px; color: rgba(232,224,208,0.5); font-style: italic; }
+  .prec-list { display: flex; flex-direction: column; gap: 12px; }
+  .prec-item { padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(200,180,120,0.1); border-radius: 3px; display: flex; flex-direction: column; gap: 6px; }
+  .prec-item-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .prec-name { font-family: 'Georgia', serif; font-size: 13.5px; color: #e8e0d0; font-style: italic; }
+  .prec-citation { font-size: 11px; color: rgba(232,224,208,0.4); }
+  .prec-relevance { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; font-weight: 600; white-space: nowrap; }
+  .prec-relevance-supports_claimant { color: #7dd87d; border: 1px solid rgba(125,216,125,0.4); }
+  .prec-relevance-supports_defendant { color: #e87d7d; border: 1px solid rgba(232,125,125,0.4); }
+  .prec-relevance-mixed { color: #e8c87d; border: 1px solid rgba(232,200,125,0.4); }
+  .prec-similarity { font-size: 12.5px; line-height: 1.55; color: rgba(232,224,208,0.75); }
+  .prec-link { align-self: flex-start; font-size: 11.5px; color: rgba(100,220,160,0.8); text-decoration: none; border-bottom: 1px solid rgba(100,220,160,0.3); }
+  .prec-link:hover { color: rgba(100,220,160,1); border-bottom-color: rgba(100,220,160,0.7); }
+  .prec-disclaimer { font-size: 10.5px; font-style: italic; color: rgba(232,224,208,0.4); padding-top: 8px; border-top: 1px solid rgba(200,180,120,0.08); }
   .divergence-strip { border: 1px solid rgba(232,200,125,0.45); border-left: 3px solid #e8c87d; border-radius: 4px; padding: 14px 18px; background: rgba(232,200,125,0.06); display: flex; flex-direction: column; gap: 8px; animation: fadeUp 0.4s ease forwards; }
   .div-header { display: flex; align-items: center; gap: 10px; }
   .div-icon { font-size: 14px; }
@@ -306,6 +324,8 @@ export default function App() {
   const [error,        setError]        = useState("");
   const [animPct,      setAnimPct]      = useState({ claimant: 0, defendant: 0 });
   const [mlPrediction, setMlPrediction] = useState(null);
+  const [precedents,   setPrecedents]   = useState(null);
+  const [precedentsLoading, setPrecedentsLoading] = useState(false);
   const [rawAnalysis,  setRawAnalysis]  = useState("");  // original Groq markdown
   const [audience,     setAudience]     = useState("partner");
   const contractRef = useRef(null);
@@ -351,7 +371,7 @@ export default function App() {
       case_type: "dispute",
       title,
       input_data: { contractText, disputeDesc },
-      result_data: { results, probability, bailiiLinks, mlPrediction },
+      result_data: { results, probability, bailiiLinks, mlPrediction, precedents },
     });
     if (insErr) {
       console.error(insErr);
@@ -373,6 +393,8 @@ export default function App() {
       setProbability(saved.result_data?.probability || null);
       setBailiiLinks(saved.result_data?.bailiiLinks || []);
       setMlPrediction(saved.result_data?.mlPrediction || null);
+      setPrecedents(saved.result_data?.precedents || null);
+      setPrecedentsLoading(false);
       setView("dispute");
       // The contract input is a contentEditable div, not a textarea — React
       // state alone doesn't populate its visible content. Write directly via
@@ -402,6 +424,8 @@ export default function App() {
     setResults(null);
     setProbability(null);
     setMlPrediction(null);
+    setPrecedents(null);
+    setPrecedentsLoading(false);
     setRawAnalysis("");
     setAudience("partner");
     setBailiiLinks([]);
@@ -488,6 +512,26 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
         try {
           const mlData = await mlResponse.json();
           setMlPrediction(mlData);
+
+          // ── Fire precedent-matching once we have the ML model's detected
+          // features to ground it in — non-fatal if it fails ──
+          const df = mlData.detected_features || {};
+          setPrecedentsLoading(true);
+          fetch("/api/precedents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contractType: df.contract_type,
+              breachType: df.breach_type,
+              clausesDetected: df.clauses_detected,
+              damagesGbp: df.damages_claimed_gbp,
+              disputeDesc,
+            }),
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => setPrecedents(d?.precedents || null))
+            .catch(() => setPrecedents(null))
+            .finally(() => setPrecedentsLoading(false));
         } catch {
           // ignore parse failures — non-fatal
         }
@@ -709,6 +753,39 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
               </div>
               <div className="ml-disclaimer">
                 Statistical baseline trained on historical case patterns. Not legal advice.
+              </div>
+            </div>
+          )}
+
+          {(precedentsLoading || (precedents && precedents.length > 0)) && (
+            <div className="prec-card">
+              <div className="prec-header">
+                <span className="prec-badge">⚖️ PRECEDENT MATCH</span>
+                <span className="prec-title">Comparable Cases</span>
+              </div>
+              {precedentsLoading && !precedents && (
+                <div className="prec-loading">Searching for cases with a similar fact pattern…</div>
+              )}
+              {precedents && precedents.length > 0 && (
+                <div className="prec-list">
+                  {precedents.map((p, i) => (
+                    <div className="prec-item" key={i}>
+                      <div className="prec-item-header">
+                        <span className="prec-name">{p.caseName}{p.citation ? ` ${p.citation}` : ""}</span>
+                        <span className={`prec-relevance prec-relevance-${p.relevance}`}>
+                          {p.relevance.replace("_", " ").replace("supports ", "→ ")}
+                        </span>
+                      </div>
+                      {p.similarity && <div className="prec-similarity">{p.similarity}</div>}
+                      <a className="prec-link" href={p.bailiiUrl} target="_blank" rel="noreferrer">
+                        Verify on BAILII ↗
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="prec-disclaimer">
+                AI-suggested comparable cases based on the dispute's detected fact pattern — not verified citations. Confirm each case via the linked BAILII search before relying on it.
               </div>
             </div>
           )}

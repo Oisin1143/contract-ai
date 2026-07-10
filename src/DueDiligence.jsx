@@ -8,6 +8,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { extractTextFromFile } from "./extractText";
 import NegotiateModal from "./NegotiateModal";
+import NegotiateSimulator from "./NegotiateSimulator";
 import AudienceToggle from "./AudienceToggle";
 import { supabase } from "./supabase";
 
@@ -34,6 +35,7 @@ export default function DueDiligence({ user }) {
   const [results, setResults] = useState(null);
   const [activeFinding, setActiveFinding] = useState(null); // {categoryIdx, findingIdx}
   const [negotiating, setNegotiating] = useState(null); // { finding, categoryName }
+  const [simulating, setSimulating] = useState(null); // { finding, categoryName }
   const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved", "error"
   const [audience, setAudience] = useState("partner");
   const [rewrittenSummary, setRewrittenSummary] = useState(null); // null = use original
@@ -472,18 +474,32 @@ export default function DueDiligence({ user }) {
                               {f.recommendation}
                             </div>
                             {(cat.risk === "HIGH" || cat.risk === "MEDIUM") && (
-                              <button
-                                className="dd-negotiate-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setNegotiating({
-                                    finding: f,
-                                    categoryName: cat.name,
-                                  });
-                                }}
-                              >
-                                💼 Generate counter-clause &amp; email
-                              </button>
+                              <div className="dd-finding-actions">
+                                <button
+                                  className="dd-negotiate-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNegotiating({
+                                      finding: f,
+                                      categoryName: cat.name,
+                                    });
+                                  }}
+                                >
+                                  💼 Generate counter-clause &amp; email
+                                </button>
+                                <button
+                                  className="dd-negotiate-btn dd-simulate-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSimulating({
+                                      finding: f,
+                                      categoryName: cat.name,
+                                    });
+                                  }}
+                                >
+                                  🗣️ Practise negotiating this
+                                </button>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -506,6 +522,16 @@ export default function DueDiligence({ user }) {
           mode={mode}
           contractType={negotiating.categoryName}
           onClose={() => setNegotiating(null)}
+        />
+      )}
+
+      {/* Negotiation simulator modal */}
+      {simulating && (
+        <NegotiateSimulator
+          finding={simulating.finding}
+          mode={mode}
+          contractType={simulating.categoryName}
+          onClose={() => setSimulating(null)}
         />
       )}
     </div>

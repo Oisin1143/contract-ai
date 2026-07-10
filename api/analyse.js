@@ -2,6 +2,8 @@
 // Replaces the old Express backend that was hosted on Railway.
 // Keeps the GROQ key server-side so it never touches the browser.
 
+import { buildBailiiSearchUrl } from "./_lib/bailii.js";
+
 // ── Generate BAILII search links directly from case names in the model output ──
 function generateBailiiLinks(text) {
   const citations = new Set();
@@ -13,9 +15,7 @@ function generateBailiiLinks(text) {
   }
   return [...citations].slice(0, 8).map((name) => ({
     name,
-    url: `https://www.bailii.org/cgi-bin/lucy_search_1.cgi?query=${encodeURIComponent(
-      name
-    )}&method=boolean&mask_path=uk%2Fcases%2FEWCA+uk%2Fcases%2FEWHC+uk%2Fcases%2FUKSC+uk%2Fcases%2FUKHL`,
+    url: buildBailiiSearchUrl(name),
     verified: false,
   }));
 }
