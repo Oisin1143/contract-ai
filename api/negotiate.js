@@ -3,6 +3,8 @@
 // redline counter-proposals (aggressive / balanced / accommodating)
 // plus a ready-to-send negotiation email for each.
 
+import { isRateLimited } from "./_lib/rateLimit.js";
+
 function buildPrompt({ clause, issue, explanation, mode, contractType }) {
   const perspective =
     mode === "ma"
@@ -62,6 +64,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+  if (isRateLimited(req, res, { routeName: "negotiate", max: 15 })) return;
 
   const { clause, issue, explanation, mode, contractType } = req.body || {};
 

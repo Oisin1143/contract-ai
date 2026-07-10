@@ -4,6 +4,8 @@
 //   "presigning" — pre-signing review for the party about to sign
 //   "ma"        — M&A due diligence for an acquirer
 
+import { isRateLimited } from "./_lib/rateLimit.js";
+
 const CATEGORIES = [
   "Termination & Exit",
   "Liability & Indemnities",
@@ -71,6 +73,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+  if (isRateLimited(req, res, { routeName: "due-diligence", max: 8 })) return;
 
   const { contractText, mode } = req.body || {};
 

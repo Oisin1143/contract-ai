@@ -4,6 +4,8 @@
 // the user negotiates across a few turns. Stateless — the full message
 // history is passed in on every call, same pattern as the rest of the app.
 
+import { isRateLimited } from "./_lib/rateLimit.js";
+
 function buildSystemPrompt({ clause, issue, explanation, mode, contractType }) {
   const perspective =
     mode === "ma"
@@ -35,6 +37,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+  if (isRateLimited(req, res, { routeName: "negotiate-chat", max: 30 })) return;
 
   const { clause, issue, explanation, mode, contractType, messages } = req.body || {};
 

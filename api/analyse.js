@@ -3,6 +3,7 @@
 // Keeps the GROQ key server-side so it never touches the browser.
 
 import { buildBailiiSearchUrl } from "./_lib/bailii.js";
+import { isRateLimited } from "./_lib/rateLimit.js";
 
 // ── Generate BAILII search links directly from case names in the model output ──
 function generateBailiiLinks(text) {
@@ -25,6 +26,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+  if (isRateLimited(req, res, { routeName: "analyse", max: 10 })) return;
 
   // Vercel parses JSON automatically when Content-Type is application/json
   const { contractText, disputeDesc } = req.body || {};

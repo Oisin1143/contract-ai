@@ -3,6 +3,8 @@
 // it for a different audience. Keeps the same findings, changes
 // tone/vocabulary/depth.
 
+import { isRateLimited } from "./_lib/rateLimit.js";
+
 const AUDIENCES = {
   partner: {
     label: "Partner brief",
@@ -65,6 +67,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+  if (isRateLimited(req, res, { routeName: "reframe", max: 15 })) return;
 
   const { originalAnalysis, audience, contextType } = req.body || {};
 

@@ -7,6 +7,7 @@
 // name just lands the user on a real search, never a broken/misleading link.
 
 import { buildBailiiSearchUrl } from "./_lib/bailii.js";
+import { isRateLimited } from "./_lib/rateLimit.js";
 
 function buildPrompt({ contractType, breachType, clausesDetected, damagesGbp, disputeDesc }) {
   const damagesLine =
@@ -56,6 +57,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
+  if (isRateLimited(req, res, { routeName: "precedents", max: 15 })) return;
 
   const { contractType, breachType, clausesDetected, damagesGbp, disputeDesc } = req.body || {};
 
