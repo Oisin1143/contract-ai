@@ -9,6 +9,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { extractTextFromFile } from "./extractText";
 import NegotiateModal from "./NegotiateModal";
 import NegotiateSimulator from "./NegotiateSimulator";
+import AutoNegotiate from "./AutoNegotiate";
 import AudienceToggle from "./AudienceToggle";
 import { supabase } from "./supabase";
 
@@ -36,6 +37,7 @@ export default function DueDiligence({ user }) {
   const [activeFinding, setActiveFinding] = useState(null); // {categoryIdx, findingIdx}
   const [negotiating, setNegotiating] = useState(null); // { finding, categoryName }
   const [simulating, setSimulating] = useState(null); // { finding, categoryName }
+  const [autoNegotiating, setAutoNegotiating] = useState(null); // { finding, categoryName }
   const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved", "error"
   const [audience, setAudience] = useState("partner");
   const [rewrittenSummary, setRewrittenSummary] = useState(null); // null = use original
@@ -499,6 +501,18 @@ export default function DueDiligence({ user }) {
                                 >
                                   🗣️ Practise negotiating this
                                 </button>
+                                <button
+                                  className="dd-negotiate-btn dd-autoneg-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAutoNegotiating({
+                                      finding: f,
+                                      categoryName: cat.name,
+                                    });
+                                  }}
+                                >
+                                  🤖 Auto-negotiate to resolution
+                                </button>
                               </div>
                             )}
                           </div>
@@ -532,6 +546,16 @@ export default function DueDiligence({ user }) {
           mode={mode}
           contractType={simulating.categoryName}
           onClose={() => setSimulating(null)}
+        />
+      )}
+
+      {/* Autonomous negotiation modal */}
+      {autoNegotiating && (
+        <AutoNegotiate
+          finding={autoNegotiating.finding}
+          mode={mode}
+          contractType={autoNegotiating.categoryName}
+          onClose={() => setAutoNegotiating(null)}
         />
       )}
     </div>

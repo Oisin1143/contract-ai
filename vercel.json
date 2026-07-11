@@ -12,6 +12,9 @@
     "api/negotiate-chat.js": {
       "maxDuration": 30
     },
+    "api/auto-negotiate.js": {
+      "maxDuration": 60
+    },
     "api/precedents.js": {
       "maxDuration": 30
     },
