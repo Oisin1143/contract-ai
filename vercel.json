@@ -15,6 +15,9 @@
     "api/precedents.js": {
       "maxDuration": 30
     },
+    "api/redline-summary.js": {
+      "maxDuration": 30
+    },
     "api/predict.py": {
       "maxDuration": 30,
       "memory": 1024,

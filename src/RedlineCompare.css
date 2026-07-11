@@ -1,0 +1,204 @@
+/* src/RedlineCompare.css
+   Styles for the Redline / Version Comparison feature.
+   Imported from App.jsx so it applies only when the redline view is active. */
+
+.redline-root {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 48px 48px;
+}
+
+/* ── Input layout ────────────────────────────────────── */
+.redline-input-row {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.redline-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 860px) {
+  .redline-inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.redline-input-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.redline-input-label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232, 217, 138, 0.65);
+  font-weight: 500;
+}
+
+.redline-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.redline-upload-btn {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(200, 180, 120, 0.35);
+  border-radius: 3px;
+  color: rgba(232, 217, 138, 0.85);
+  font-family: "DM Sans", sans-serif;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.redline-upload-btn:hover:not(:disabled) {
+  border-color: rgba(232, 217, 138, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+.redline-filename {
+  font-size: 12px;
+  color: rgba(100, 220, 120, 0.75);
+  letter-spacing: 0.04em;
+}
+
+.redline-textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(200, 180, 120, 0.18);
+  border-radius: 3px;
+  color: #e8e0d0;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  width: 100%;
+  min-height: 220px;
+  transition: border-color 0.2s;
+}
+.redline-textarea:focus {
+  border-color: rgba(232, 217, 138, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+}
+.redline-textarea::placeholder {
+  color: rgba(232, 224, 208, 0.22);
+}
+
+.redline-error {
+  color: #e87d7d;
+  font-size: 13px;
+  padding: 4px 2px;
+}
+
+/* ── Results layout ──────────────────────────────────── */
+.redline-results {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.redline-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(200, 180, 120, 0.12);
+}
+.redline-results-title {
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+  color: #e8d98a;
+  letter-spacing: 0.02em;
+}
+.redline-results-sub {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(232, 217, 138, 0.45);
+  margin-top: 4px;
+}
+
+.redline-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .redline-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.redline-view-pane,
+.redline-changes-pane {
+  min-width: 0;
+}
+
+.redline-text {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(200, 180, 120, 0.1);
+  border-radius: 3px;
+  padding: 20px 22px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: rgba(232, 224, 208, 0.72);
+  max-height: 75vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "Georgia", "DM Sans", serif;
+}
+.redline-added {
+  background: rgba(125, 216, 125, 0.15);
+  color: #a8e8a8;
+  text-decoration: underline;
+  text-decoration-color: rgba(125, 216, 125, 0.5);
+  padding: 0 1px;
+}
+.redline-removed {
+  background: rgba(232, 125, 125, 0.12);
+  color: rgba(232, 125, 125, 0.75);
+  text-decoration: line-through;
+  padding: 0 1px;
+}
+
+.redline-changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.redline-change-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(200, 180, 120, 0.12);
+  border-radius: 3px;
+  padding: 14px 16px;
+}
+.redline-change-what {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #e8e0d0;
+  margin-bottom: 6px;
+}
+.redline-change-significance {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(232, 224, 208, 0.7);
+}
+.redline-loading {
+  font-size: 12.5px;
+  color: rgba(232, 224, 208, 0.5);
+  font-style: italic;
+  padding: 4px 0;
+}

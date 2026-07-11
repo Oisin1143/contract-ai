@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import DueDiligence from "./DueDiligence";
 import "./DueDiligence.css";
+import RedlineCompare from "./RedlineCompare";
+import "./RedlineCompare.css";
 import AuthButton from "./AuthButton";
 import MyCases from "./MyCases";
 import AudienceToggle from "./AudienceToggle";
@@ -556,6 +558,8 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
               ? "Contract Dispute Analyser · UK Law"
               : view === "dd"
               ? "Contract Due Diligence · UK Law"
+              : view === "redline"
+              ? "Redline Compare · UK Law"
               : "Saved Cases"}
           </div>
         </div>
@@ -571,6 +575,12 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
             onClick={() => setView("dd")}
           >
             Due Diligence
+          </button>
+          <button
+            className={`arb-nav-btn ${view === "redline" ? "active" : ""}`}
+            onClick={() => setView("redline")}
+          >
+            Redline Compare
           </button>
           {user && (
             <button
@@ -588,6 +598,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
       </header>
 
       {view === "dd" && <DueDiligence user={user} />}
+      {view === "redline" && <RedlineCompare />}
       {view === "mycases" && <MyCases user={user} onOpen={openSavedCase} />}
 
       {view === "dispute" && (
