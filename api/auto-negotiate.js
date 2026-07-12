@@ -75,7 +75,25 @@ CRITICAL OUTPUT RULES:
 - "rationale" is ONE sentence explaining your move.`;
 }
 
-async function callGroq(GROQ_KEY, prompt) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Groq's error message gives the wait as "505ms", "2.5s", or "43m30.144s"
+// depending on which limit was hit. Parse it so a transient per-minute
+// collision (e.g. a large due-diligence call immediately followed by this
+// route, in the same 60s window) can be retried automatically instead of
+// surfacing a raw provider error mid-negotiation.
+function parseRetryAfterMs(message) {
+  const m = String(message || "").match(/try again in (?:(\d+)m)?([\d.]+)(ms|s)\b/i);
+  if (!m) return null;
+  const minutes = m[1] ? parseFloat(m[1]) : 0;
+  const value = parseFloat(m[2]);
+  const unit = m[3].toLowerCase();
+  const seconds = minutes * 60 + (unit === "s" ? value : 0);
+  const ms = unit === "ms" ? value : 0;
+  return Math.ceil(seconds * 1000 + ms);
+}
+
+async function callGroq(GROQ_KEY, prompt, attempt = 1) {
   const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -100,7 +118,16 @@ async function callGroq(GROQ_KEY, prompt) {
 
   if (!groqRes.ok) {
     const err = await groqRes.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
+    const message = err?.error?.message || `Groq error ${groqRes.status}`;
+    const retryAfterMs = parseRetryAfterMs(message);
+    // Only retry short waits (a per-minute cap tripped by bad timing) — a
+    // multi-second-or-longer wait usually means a daily/org-level quota is
+    // exhausted, and stalling the function won't fix that.
+    if (retryAfterMs != null && retryAfterMs <= 8000 && attempt < 3) {
+      await sleep(retryAfterMs + 300);
+      return callGroq(GROQ_KEY, prompt, attempt + 1);
+    }
+    throw new Error(message);
   }
 
   const groqData = await groqRes.json();

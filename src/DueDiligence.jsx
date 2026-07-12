@@ -38,6 +38,10 @@ export default function DueDiligence({ user }) {
   const [negotiating, setNegotiating] = useState(null); // { finding, categoryName }
   const [simulating, setSimulating] = useState(null); // { finding, categoryName }
   const [autoNegotiating, setAutoNegotiating] = useState(null); // { finding, categoryName }
+  const [autoNegBannerSeen, setAutoNegBannerSeen] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("arbitrer_autoneg_banner_seen") === "1"
+  );
+  const [spotlightFinding, setSpotlightFinding] = useState(null); // { categoryIdx, findingIdx }
   const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved", "error"
   const [audience, setAudience] = useState("partner");
   const [rewrittenSummary, setRewrittenSummary] = useState(null); // null = use original
@@ -245,6 +249,34 @@ export default function DueDiligence({ user }) {
     }
   };
 
+  // The first HIGH/MEDIUM finding — used to point the Auto-Negotiate
+  // callout banner at a concrete button rather than just describing it.
+  const firstAutoNegotiable = useMemo(() => {
+    if (!results) return null;
+    for (let catIdx = 0; catIdx < results.categories.length; catIdx++) {
+      const cat = results.categories[catIdx];
+      if ((cat.risk === "HIGH" || cat.risk === "MEDIUM") && cat.findings?.length) {
+        return { categoryIdx: catIdx, findingIdx: 0 };
+      }
+    }
+    return null;
+  }, [results]);
+
+  const dismissAutoNegBanner = () => {
+    setAutoNegBannerSeen(true);
+    try {
+      localStorage.setItem("arbitrer_autoneg_banner_seen", "1");
+    } catch { /* localStorage disabled — banner will just reappear next visit */ }
+  };
+
+  const showAutoNegotiable = () => {
+    if (!firstAutoNegotiable) return;
+    jumpToFinding(firstAutoNegotiable.categoryIdx, firstAutoNegotiable.findingIdx);
+    setSpotlightFinding(firstAutoNegotiable);
+    setTimeout(() => setSpotlightFinding(null), 2600);
+    dismissAutoNegBanner();
+  };
+
   return (
     <div className="dd-root">
       {/* ── INPUT ROW ───────────────────────────────────── */}
@@ -398,6 +430,34 @@ export default function DueDiligence({ user }) {
             onRewrite={(text) => setRewrittenSummary(text)}
           />
 
+          {/* Auto-Negotiate callout — points at a concrete finding */}
+          {firstAutoNegotiable && !autoNegBannerSeen && (
+            <div className="dd-autoneg-banner">
+              <div className="dd-autoneg-banner-text">
+                <span className="dd-autoneg-banner-icon">🤖</span>
+                <div>
+                  <div className="dd-autoneg-banner-title">New: Auto-Negotiate</div>
+                  <div className="dd-autoneg-banner-sub">
+                    Two AI solicitors redline a flagged clause against each other —
+                    zero input from you — until they agree or deadlock.
+                  </div>
+                </div>
+              </div>
+              <div className="dd-autoneg-banner-actions">
+                <button className="dd-autoneg-banner-cta" onClick={showAutoNegotiable}>
+                  Show me →
+                </button>
+                <button
+                  className="dd-autoneg-banner-dismiss"
+                  onClick={dismissAutoNegBanner}
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Two-pane: heatmap + categories */}
           <div className="dd-split">
             {/* Contract heatmap */}
@@ -502,7 +562,12 @@ export default function DueDiligence({ user }) {
                                   🗣️ Practise negotiating this
                                 </button>
                                 <button
-                                  className="dd-negotiate-btn dd-autoneg-btn"
+                                  className={`dd-negotiate-btn dd-autoneg-btn ${
+                                    spotlightFinding?.categoryIdx === catIdx &&
+                                    spotlightFinding?.findingIdx === fIdx
+                                      ? "dd-autoneg-spotlight"
+                                      : ""
+                                  }`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setAutoNegotiating({

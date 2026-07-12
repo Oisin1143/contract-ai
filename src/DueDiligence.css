@@ -388,6 +388,89 @@
   background: linear-gradient(135deg, rgba(125,216,125,0.22) 0%, rgba(125,216,125,0.32) 100%);
   border-color: rgba(125,216,125,0.7);
 }
+.dd-autoneg-spotlight {
+  animation: dd-autoneg-pulse 0.65s ease-in-out 3;
+}
+@keyframes dd-autoneg-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(125,216,125,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(125,216,125,0); }
+}
+
+/* ── Auto-Negotiate discovery banner ─────────────────── */
+.dd-autoneg-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(125,216,125,0.07) 0%, rgba(125,216,125,0.03) 100%);
+  border: 1px solid rgba(125,216,125,0.3);
+  border-radius: 4px;
+  animation: fadeUp 0.4s ease forwards;
+}
+.dd-autoneg-banner-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.dd-autoneg-banner-icon {
+  font-size: 20px;
+  line-height: 1.4;
+}
+.dd-autoneg-banner-title {
+  font-family: "Playfair Display", serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #a8e8a8;
+  margin-bottom: 3px;
+}
+.dd-autoneg-banner-sub {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(232, 224, 208, 0.65);
+  max-width: 520px;
+}
+.dd-autoneg-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.dd-autoneg-banner-cta {
+  padding: 9px 16px;
+  background: rgba(125,216,125,0.15);
+  border: 1px solid rgba(125,216,125,0.5);
+  border-radius: 3px;
+  color: #a8e8a8;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dd-autoneg-banner-cta:hover {
+  background: rgba(125,216,125,0.26);
+  border-color: rgba(125,216,125,0.8);
+}
+.dd-autoneg-banner-dismiss {
+  background: transparent;
+  border: 1px solid rgba(200,180,120,0.2);
+  border-radius: 3px;
+  color: rgba(232,224,208,0.4);
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.dd-autoneg-banner-dismiss:hover {
+  border-color: rgba(232,125,125,0.5);
+  color: #e87d7d;
+}
+@media (max-width: 700px) {
+  .dd-autoneg-banner { flex-direction: column; align-items: flex-start; }
+}
 @media (max-width: 700px) {
   .dd-finding-actions { grid-template-columns: 1fr; }
 }
