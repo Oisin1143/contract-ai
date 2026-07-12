@@ -42,11 +42,20 @@ export default function DueDiligence({ user }) {
     () => typeof window !== "undefined" && localStorage.getItem("arbitrer_autoneg_banner_seen") === "1"
   );
   const [spotlightFinding, setSpotlightFinding] = useState(null); // { categoryIdx, findingIdx }
+  const [previewLightboxOpen, setPreviewLightboxOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved", "error"
   const [audience, setAudience] = useState("partner");
   const [rewrittenSummary, setRewrittenSummary] = useState(null); // null = use original
   const fileInputRef = useRef(null);
   const contractRef = useRef(null);
+
+  // Close the preview lightbox on Escape
+  useEffect(() => {
+    if (!previewLightboxOpen) return;
+    const handler = (e) => e.key === "Escape" && setPreviewLightboxOpen(false);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [previewLightboxOpen]);
 
   // ── Restore a saved DD case if App.jsx handed one to us via sessionStorage ──
   useEffect(() => {
@@ -306,12 +315,6 @@ export default function DueDiligence({ user }) {
 
           {/* Auto-Negotiate preview — sets expectations before the form is even filled in */}
           <div className="dd-autoneg-preview">
-            <img
-              className="dd-autoneg-preview-gif"
-              src="/autonegotiate-preview.gif"
-              alt="Two AI solicitors autonomously redlining a contract clause turn by turn, ending in an agreed or deadlocked outcome"
-              loading="lazy"
-            />
             <div className="dd-autoneg-preview-text">
               <div className="dd-autoneg-preview-title">🤖 Auto-Negotiate</div>
               <div className="dd-autoneg-preview-sub">
@@ -320,7 +323,39 @@ export default function DueDiligence({ user }) {
                 until they agree or deadlock.
               </div>
             </div>
+            <button
+              className="dd-autoneg-preview-gif-btn"
+              onClick={() => setPreviewLightboxOpen(true)}
+              aria-label="View larger preview of Auto-Negotiate"
+            >
+              <img
+                className="dd-autoneg-preview-gif"
+                src="/autonegotiate-preview.gif"
+                alt="Two AI solicitors autonomously redlining a contract clause turn by turn, ending in an agreed or deadlocked outcome"
+                loading="lazy"
+              />
+              <span className="dd-autoneg-preview-expand">⤢ View larger</span>
+            </button>
           </div>
+
+          {previewLightboxOpen && (
+            <div className="dd-lightbox-overlay" onClick={() => setPreviewLightboxOpen(false)}>
+              <div className="dd-lightbox-body" onClick={(e) => e.stopPropagation()}>
+                <button
+                  className="neg-close dd-lightbox-close"
+                  onClick={() => setPreviewLightboxOpen(false)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+                <img
+                  className="dd-lightbox-gif"
+                  src="/autonegotiate-demo-full.gif"
+                  alt="Full-size demo: two AI solicitors autonomously redlining a contract clause turn by turn, ending in an agreed or deadlocked outcome"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Upload */}
           <div className="dd-upload">

@@ -106,19 +106,12 @@
 /* ── Auto-Negotiate preview (pre-review empty state) ─── */
 .dd-autoneg-preview {
   display: flex;
-  gap: 18px;
-  align-items: center;
-  padding: 14px;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
   background: rgba(125, 216, 125, 0.04);
   border: 1px solid rgba(125, 216, 125, 0.22);
   border-radius: 4px;
-}
-.dd-autoneg-preview-gif {
-  width: 220px;
-  flex-shrink: 0;
-  border-radius: 3px;
-  border: 1px solid rgba(200, 180, 120, 0.15);
-  display: block;
 }
 .dd-autoneg-preview-text {
   display: flex;
@@ -127,18 +120,88 @@
 }
 .dd-autoneg-preview-title {
   font-family: "Playfair Display", serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #a8e8a8;
 }
 .dd-autoneg-preview-sub {
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.55;
   color: rgba(232, 224, 208, 0.65);
 }
+.dd-autoneg-preview-gif-btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid rgba(200, 180, 120, 0.18);
+  border-radius: 3px;
+  background: transparent;
+  cursor: zoom-in;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.dd-autoneg-preview-gif-btn:hover {
+  border-color: rgba(232, 217, 138, 0.5);
+}
+.dd-autoneg-preview-gif {
+  width: 100%;
+  display: block;
+}
+.dd-autoneg-preview-expand {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 6px 12px;
+  background: rgba(10, 10, 10, 0.75);
+  border: 1px solid rgba(232, 217, 138, 0.4);
+  border-radius: 3px;
+  color: #e8d98a;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.dd-autoneg-preview-gif-btn:hover .dd-autoneg-preview-expand,
+.dd-autoneg-preview-gif-btn:focus-visible .dd-autoneg-preview-expand {
+  opacity: 1;
+}
+
+/* ── Preview lightbox ─────────────────────────────────── */
+.dd-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.86);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  animation: neg-fade-in 0.18s ease-out;
+}
+.dd-lightbox-body {
+  position: relative;
+  max-width: min(1040px, 100%);
+  max-height: 100%;
+}
+.dd-lightbox-gif {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+  border: 1px solid rgba(200, 180, 120, 0.3);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+}
+.dd-lightbox-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  background: #0f0f0f;
+}
+
 @media (max-width: 560px) {
-  .dd-autoneg-preview { flex-direction: column; align-items: stretch; }
-  .dd-autoneg-preview-gif { width: 100%; }
+  .dd-lightbox-close { top: 8px; right: 8px; }
 }
 
 .dd-textarea {
