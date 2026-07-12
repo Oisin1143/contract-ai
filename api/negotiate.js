@@ -4,6 +4,7 @@
 // plus a ready-to-send negotiation email for each.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 function buildPrompt({ clause, issue, explanation, mode, contractType }) {
   const perspective =
@@ -144,6 +145,6 @@ export default async function handler(req, res) {
     return res.status(200).json(parsed);
   } catch (e) {
     console.error("Negotiate error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }

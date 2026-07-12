@@ -4,6 +4,7 @@
 // tone/vocabulary/depth.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 const AUDIENCES = {
   partner: {
@@ -125,6 +126,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ rewritten, audience });
   } catch (e) {
     console.error("Reframe error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }

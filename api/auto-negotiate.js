@@ -9,6 +9,7 @@
 // philosophy as api/redline-summary.js.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 const MAX_TURNS = 6; // 3 rounds each side
 const MODEL = "llama-3.3-70b-versatile";
@@ -24,13 +25,23 @@ function perspective(mode, party) {
     : "the counterparty's solicitor, defending the clause as drafted";
 }
 
+// Only the most recent turns need their exact clause text in the prompt —
+// older text has already been superseded, so keeping it in full would just
+// make every subsequent call bigger for no benefit. Free-tier Groq usage
+// is capped at 100k tokens/day, so this keeps a full 6-turn run affordable.
+const FULL_CONTEXT_TURNS = 2;
+
 function formatTranscript(transcript) {
   const label = { ourCounsel: "Our Counsel", opposingCounsel: "Opposing Counsel" };
+  const cutoff = transcript.length - FULL_CONTEXT_TURNS;
   return transcript
-    .map(
-      (t, i) =>
-        `Turn ${i + 1} (${label[t.party]} — ${t.move}):\n"${t.text}"\nRationale: ${t.rationale}`
-    )
+    .map((t, i) => {
+      const tag = `Turn ${i + 1} (${label[t.party]} — ${t.move})`;
+      if (i < cutoff) {
+        return `${tag}: ${t.rationale}`;
+      }
+      return `${tag}:\n"${t.text}"\nRationale: ${t.rationale}`;
+    })
     .join("\n\n");
 }
 
@@ -200,6 +211,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ originalClause: clause, transcript, outcome, finalText });
   } catch (e) {
     console.error("Auto-negotiate error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }

@@ -7,6 +7,7 @@
 // changes themselves (LLMs are unreliable at exact text comparison).
 
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 function buildPrompt(segments) {
   const list = segments
@@ -126,6 +127,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ changes });
   } catch (e) {
     console.error("Redline-summary error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }

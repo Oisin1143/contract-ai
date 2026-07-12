@@ -5,6 +5,7 @@
 // history is passed in on every call, same pattern as the rest of the app.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 function buildSystemPrompt({ clause, issue, explanation, mode, contractType }) {
   const perspective =
@@ -109,6 +110,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply });
   } catch (e) {
     console.error("Negotiate-chat error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }

@@ -4,6 +4,7 @@
 
 import { buildBailiiSearchUrl } from "./_lib/bailii.js";
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 // ── Generate BAILII search links directly from case names in the model output ──
 function generateBailiiLinks(text) {
@@ -129,6 +130,6 @@ Reasoning: [2-3 sentences explaining the split based on strength of arguments an
     return res.status(200).json({ result: fullText, bailiiLinks });
   } catch (e) {
     console.error("Error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }

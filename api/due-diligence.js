@@ -5,6 +5,7 @@
 //   "ma"        — M&A due diligence for an acquirer
 
 import { isRateLimited } from "./_lib/rateLimit.js";
+import { friendlyGroqError } from "./_lib/groqErrors.js";
 
 const CATEGORIES = [
   "Termination & Exit",
@@ -165,6 +166,6 @@ export default async function handler(req, res) {
     return res.status(200).json(parsed);
   } catch (e) {
     console.error("Due diligence error:", e.message);
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: friendlyGroqError(e.message) });
   }
 }
