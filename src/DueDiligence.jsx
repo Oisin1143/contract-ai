@@ -304,6 +304,24 @@ export default function DueDiligence({ user }) {
               : "Reviewing risks from the perspective of an acquirer evaluating a target company that is party to this contract."}
           </div>
 
+          {/* Auto-Negotiate preview — sets expectations before the form is even filled in */}
+          <div className="dd-autoneg-preview">
+            <img
+              className="dd-autoneg-preview-gif"
+              src="/autonegotiate-preview.gif"
+              alt="Two AI solicitors autonomously redlining a contract clause turn by turn, ending in an agreed or deadlocked outcome"
+              loading="lazy"
+            />
+            <div className="dd-autoneg-preview-text">
+              <div className="dd-autoneg-preview-title">🤖 Auto-Negotiate</div>
+              <div className="dd-autoneg-preview-sub">
+                Once your review is in, any flagged clause can be handed to two AI
+                solicitors who redline it against each other — no input from you —
+                until they agree or deadlock.
+              </div>
+            </div>
+          </div>
+
           {/* Upload */}
           <div className="dd-upload">
             <input
