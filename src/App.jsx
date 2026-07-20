@@ -558,7 +558,7 @@ Reasoning: [2-3 sentences explaining the split based on the strength of argument
     <div className="app">
       <header>
         <div className="logo">
-          <div className="logo-title">ARBITRER</div>
+          <div className="logo-title">VERILEX</div>
           <div className="logo-sub">
             {view === "dispute"
               ? "Contract Dispute Analyser · UK Law"

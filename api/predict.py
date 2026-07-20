@@ -1,7 +1,7 @@
 """
 api/predict.py
 ──────────────
-Vercel Python serverless function that runs the trained Arbitrer model
+Vercel Python serverless function that runs the trained Verilex model
 (Gradient Boosting + TF-IDF, ~68% accuracy on 8,902 UK contract cases)
 on a contract + dispute description.
 
