@@ -32,8 +32,8 @@ const styles = `
   .live-badge { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(100,220,120,0.7); border: 1px solid rgba(100,220,120,0.25); padding: 4px 10px; border-radius: 2px; display: flex; align-items: center; gap: 5px; }
   .live-dot { width: 5px; height: 5px; background: #64dc78; border-radius: 50%; animation: pulse 1.8s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .user-count-badge { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(232,217,138,0.75); border: 1px solid rgba(232,217,138,0.28); padding: 4px 10px; border-radius: 2px; display: flex; align-items: center; gap: 6px; transition: border-color 0.3s, background 0.3s; }
-  .user-count-num { font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: #e8d98a; font-variant-numeric: tabular-nums; }
+  .user-count-badge { font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(232,217,138,0.75); border: 1px solid rgba(232,217,138,0.28); padding: 4px 10px; border-radius: 2px; display: flex; align-items: center; gap: 5px; }
+  .user-count-num { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; color: #e8d98a; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
   .user-count-bump { border-color: rgba(232,217,138,0.7); background: rgba(232,217,138,0.08); }
   .user-count-bump .user-count-num { animation: user-count-pop 0.5s ease-out; }
   @keyframes user-count-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); color: #fff; } 100% { transform: scale(1); } }
