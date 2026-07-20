@@ -5,7 +5,8 @@
 //   "ma"        — M&A due diligence for an acquirer
 
 import { isRateLimited } from "./_lib/rateLimit.js";
-import { friendlyGroqError } from "./_lib/groqErrors.js";
+import { friendlyLLMError } from "./_lib/llmErrors.js";
+import { callLLM } from "./_lib/llm.js";
 
 const CATEGORIES = [
   "Termination & Exit",
@@ -98,47 +99,21 @@ export default async function handler(req, res) {
     });
   }
 
-  const GROQ_KEY = process.env.GROQ_KEY;
-  if (!GROQ_KEY) {
-    return res
-      .status(500)
-      .json({ error: "Server misconfiguration: missing API key." });
-  }
-
   try {
-    const groqRes = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_KEY}`,
+    const { content: raw } = await callLLM({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a senior UK commercial contracts solicitor. You return only valid JSON, never prose. Every excerpt you quote is verbatim from the contract you are given.",
         },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a senior UK commercial contracts solicitor. You return only valid JSON, never prose. Every excerpt you quote is verbatim from the contract you are given.",
-            },
-            { role: "user", content: buildPrompt(contractText, mode) },
-          ],
-          max_tokens: 6000,
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-        }),
-      }
-    );
-
-    if (!groqRes.ok) {
-      const err = await groqRes.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
-    }
-
-    const groqData = await groqRes.json();
-    const raw = groqData.choices?.[0]?.message?.content || "";
-    if (!raw) throw new Error("Empty response from Groq.");
+        { role: "user", content: buildPrompt(contractText, mode) },
+      ],
+      maxTokens: 6000,
+      temperature: 0.2,
+      jsonMode: true,
+      routeName: "due-diligence",
+    });
 
     // Parse the JSON response
     let parsed;
@@ -166,6 +141,6 @@ export default async function handler(req, res) {
     return res.status(200).json(parsed);
   } catch (e) {
     console.error("Due diligence error:", e.message);
-    return res.status(500).json({ error: friendlyGroqError(e.message) });
+    return res.status(500).json({ error: friendlyLLMError(e.message) });
   }
 }

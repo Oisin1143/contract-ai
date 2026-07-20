@@ -9,10 +9,10 @@
 // philosophy as api/redline-summary.js.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
-import { friendlyGroqError } from "./_lib/groqErrors.js";
+import { friendlyLLMError } from "./_lib/llmErrors.js";
+import { callLLM } from "./_lib/llm.js";
 
 const MAX_TURNS = 6; // 3 rounds each side
-const MODEL = "llama-3.3-70b-versatile";
 
 function perspective(mode, party) {
   if (party === "ourCounsel") {
@@ -86,64 +86,24 @@ CRITICAL OUTPUT RULES:
 - "rationale" is ONE sentence explaining your move.`;
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Groq's error message gives the wait as "505ms", "2.5s", or "43m30.144s"
-// depending on which limit was hit. Parse it so a transient per-minute
-// collision (e.g. a large due-diligence call immediately followed by this
-// route, in the same 60s window) can be retried automatically instead of
-// surfacing a raw provider error mid-negotiation.
-function parseRetryAfterMs(message) {
-  const m = String(message || "").match(/try again in (?:(\d+)m)?([\d.]+)(ms|s)\b/i);
-  if (!m) return null;
-  const minutes = m[1] ? parseFloat(m[1]) : 0;
-  const value = parseFloat(m[2]);
-  const unit = m[3].toLowerCase();
-  const seconds = minutes * 60 + (unit === "s" ? value : 0);
-  const ms = unit === "ms" ? value : 0;
-  return Math.ceil(seconds * 1000 + ms);
-}
-
-async function callGroq(GROQ_KEY, prompt, attempt = 1) {
-  const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${GROQ_KEY}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a senior UK commercial solicitor in an autonomous AI-vs-AI redline negotiation. You return only valid JSON, never prose, never meta-commentary about being an AI.",
-        },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 700,
-      temperature: 0.5,
-      response_format: { type: "json_object" },
-    }),
+// A rate limit here previously meant retrying Groq itself after a short
+// wait — now callLLM fails over to OpenAI immediately instead, which is
+// both faster and more resilient than waiting on the same provider.
+async function runTurn(prompt, routeName) {
+  const { content: raw } = await callLLM({
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a senior UK commercial solicitor in an autonomous AI-vs-AI redline negotiation. You return only valid JSON, never prose, never meta-commentary about being an AI.",
+      },
+      { role: "user", content: prompt },
+    ],
+    maxTokens: 700,
+    temperature: 0.5,
+    jsonMode: true,
+    routeName,
   });
-
-  if (!groqRes.ok) {
-    const err = await groqRes.json().catch(() => ({}));
-    const message = err?.error?.message || `Groq error ${groqRes.status}`;
-    const retryAfterMs = parseRetryAfterMs(message);
-    // Only retry short waits (a per-minute cap tripped by bad timing) — a
-    // multi-second-or-longer wait usually means a daily/org-level quota is
-    // exhausted, and stalling the function won't fix that.
-    if (retryAfterMs != null && retryAfterMs <= 8000 && attempt < 3) {
-      await sleep(retryAfterMs + 300);
-      return callGroq(GROQ_KEY, prompt, attempt + 1);
-    }
-    throw new Error(message);
-  }
-
-  const groqData = await groqRes.json();
-  const raw = groqData.choices?.[0]?.message?.content || "";
-  if (!raw) throw new Error("Empty response from Groq.");
 
   let parsed;
   try {
@@ -186,11 +146,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Clause too long (max 4,000 chars)." });
   }
 
-  const GROQ_KEY = process.env.GROQ_KEY;
-  if (!GROQ_KEY) {
-    return res.status(500).json({ error: "Server misconfiguration: missing API key." });
-  }
-
   const transcript = [];
   let outcome = "max_rounds";
 
@@ -198,7 +153,7 @@ export default async function handler(req, res) {
     for (let i = 0; i < MAX_TURNS; i++) {
       const party = i % 2 === 0 ? "ourCounsel" : "opposingCounsel";
       const prompt = buildPrompt({ party, clause, issue, explanation, mode, contractType, transcript });
-      const turn = await callGroq(GROQ_KEY, prompt);
+      const turn = await runTurn(prompt, "auto-negotiate");
       transcript.push({ party, ...turn });
 
       if (turn.move === "accept" || turn.move === "deadlock") {
@@ -211,6 +166,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ originalClause: clause, transcript, outcome, finalText });
   } catch (e) {
     console.error("Auto-negotiate error:", e.message);
-    return res.status(500).json({ error: friendlyGroqError(e.message) });
+    return res.status(500).json({ error: friendlyLLMError(e.message) });
   }
 }

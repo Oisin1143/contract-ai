@@ -1,13 +1,12 @@
-// api/_lib/groqErrors.js
-// Groq's raw rate-limit error text is accurate but not something a user
-// should see mid-review — it names internal org IDs and service tiers,
-// and reads as a crash rather than "try again shortly." This app is on
-// Groq's free on_demand tier, which has a hard 100k-token/day cap in
-// addition to the 12k-token/minute cap — both are expected to be hit
-// during normal use until the account moves to a paid tier, so every
-// Groq-calling route should surface them the same, calm way.
+// api/_lib/llmErrors.js
+// Raw rate-limit error text from Groq or OpenAI is accurate but not
+// something a user should see mid-review — it names internal org IDs and
+// service tiers, and reads as a crash rather than "try again shortly."
+// This only surfaces once callLLM (api/_lib/llm.js) has already tried
+// falling over to the secondary provider and that failed too, so by the
+// time a route reaches this, both providers are genuinely unavailable.
 
-export function friendlyGroqError(rawMessage) {
+export function friendlyLLMError(rawMessage) {
   const msg = String(rawMessage || "");
   if (!/rate limit/i.test(msg)) return msg;
 

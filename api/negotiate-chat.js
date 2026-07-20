@@ -5,7 +5,8 @@
 // history is passed in on every call, same pattern as the rest of the app.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
-import { friendlyGroqError } from "./_lib/groqErrors.js";
+import { friendlyLLMError } from "./_lib/llmErrors.js";
+import { callLLM } from "./_lib/llm.js";
 
 function buildSystemPrompt({ clause, issue, explanation, mode, contractType }) {
   const perspective =
@@ -69,11 +70,6 @@ export default async function handler(req, res) {
     }
   }
 
-  const GROQ_KEY = process.env.GROQ_KEY;
-  if (!GROQ_KEY) {
-    return res.status(500).json({ error: "Server misconfiguration: missing API key." });
-  }
-
   // "counsel" (opposing counsel, the AI) maps to assistant; "user" stays user.
   const chatMessages = [
     { role: "system", content: buildSystemPrompt({ clause, issue, explanation, mode, contractType }) },
@@ -84,32 +80,18 @@ export default async function handler(req, res) {
   ];
 
   try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: chatMessages,
-        max_tokens: 400,
-        temperature: 0.6,
-      }),
+    const { content } = await callLLM({
+      messages: chatMessages,
+      maxTokens: 400,
+      temperature: 0.6,
+      routeName: "negotiate-chat",
     });
-
-    if (!groqRes.ok) {
-      const err = await groqRes.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
-    }
-
-    const groqData = await groqRes.json();
-    const reply = groqData.choices?.[0]?.message?.content?.trim() || "";
-    if (!reply) throw new Error("Empty response from Groq.");
+    const reply = content.trim();
+    if (!reply) throw new Error("Empty response from model.");
 
     return res.status(200).json({ reply });
   } catch (e) {
     console.error("Negotiate-chat error:", e.message);
-    return res.status(500).json({ error: friendlyGroqError(e.message) });
+    return res.status(500).json({ error: friendlyLLMError(e.message) });
   }
 }

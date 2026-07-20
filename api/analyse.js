@@ -4,7 +4,8 @@
 
 import { buildBailiiSearchUrl } from "./_lib/bailii.js";
 import { isRateLimited } from "./_lib/rateLimit.js";
-import { friendlyGroqError } from "./_lib/groqErrors.js";
+import { friendlyLLMError } from "./_lib/llmErrors.js";
+import { callLLM } from "./_lib/llm.js";
 
 // ── Generate BAILII search links directly from case names in the model output ──
 function generateBailiiLinks(text) {
@@ -53,13 +54,6 @@ export default async function handler(req, res) {
       .json({ error: "Dispute description too long (max 10,000 characters)." });
   }
 
-  const GROQ_KEY = process.env.GROQ_KEY;
-  if (!GROQ_KEY) {
-    return res
-      .status(500)
-      .json({ error: "Server misconfiguration: missing API key." });
-  }
-
   const prompt = `You are a senior UK contract law barrister. Analyse the contract and dispute below thoroughly.
 
 CONTRACT TEXT:
@@ -97,32 +91,12 @@ Defendant win probability: [Y]%
 Reasoning: [2-3 sentences explaining the split based on strength of arguments and applicable UK case law.]`;
 
   try {
-    // ── Call Groq ──
-    const groqRes = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 4000,
-          temperature: 0.3,
-        }),
-      }
-    );
-
-    if (!groqRes.ok) {
-      const err = await groqRes.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
-    }
-
-    const groqData = await groqRes.json();
-    const fullText = groqData.choices?.[0]?.message?.content || "";
-    if (!fullText) throw new Error("Empty response from Groq.");
+    const { content: fullText } = await callLLM({
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 4000,
+      temperature: 0.3,
+      routeName: "analyse",
+    });
 
     // ── Generate BAILII links from citations ──
     const bailiiLinks = generateBailiiLinks(fullText);
@@ -130,6 +104,6 @@ Reasoning: [2-3 sentences explaining the split based on strength of arguments an
     return res.status(200).json({ result: fullText, bailiiLinks });
   } catch (e) {
     console.error("Error:", e.message);
-    return res.status(500).json({ error: friendlyGroqError(e.message) });
+    return res.status(500).json({ error: friendlyLLMError(e.message) });
   }
 }

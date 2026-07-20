@@ -7,7 +7,8 @@
 // changes themselves (LLMs are unreliable at exact text comparison).
 
 import { isRateLimited } from "./_lib/rateLimit.js";
-import { friendlyGroqError } from "./_lib/groqErrors.js";
+import { friendlyLLMError } from "./_lib/llmErrors.js";
+import { callLLM } from "./_lib/llm.js";
 
 function buildPrompt(segments) {
   const list = segments
@@ -69,42 +70,21 @@ export default async function handler(req, res) {
     }
   }
 
-  const GROQ_KEY = process.env.GROQ_KEY;
-  if (!GROQ_KEY) {
-    return res.status(500).json({ error: "Server misconfiguration: missing API key." });
-  }
-
   try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a senior UK commercial solicitor explaining the significance of already-identified contract changes. You return only valid JSON, never prose. You only comment on changes given to you — you do not invent additional ones.",
-          },
-          { role: "user", content: buildPrompt(segments) },
-        ],
-        max_tokens: 2000,
-        temperature: 0.3,
-        response_format: { type: "json_object" },
-      }),
+    const { content: raw } = await callLLM({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a senior UK commercial solicitor explaining the significance of already-identified contract changes. You return only valid JSON, never prose. You only comment on changes given to you — you do not invent additional ones.",
+        },
+        { role: "user", content: buildPrompt(segments) },
+      ],
+      maxTokens: 2000,
+      temperature: 0.3,
+      jsonMode: true,
+      routeName: "redline-summary",
     });
-
-    if (!groqRes.ok) {
-      const err = await groqRes.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
-    }
-
-    const groqData = await groqRes.json();
-    const raw = groqData.choices?.[0]?.message?.content || "";
-    if (!raw) throw new Error("Empty response from Groq.");
 
     let parsed;
     try {
@@ -127,6 +107,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ changes });
   } catch (e) {
     console.error("Redline-summary error:", e.message);
-    return res.status(500).json({ error: friendlyGroqError(e.message) });
+    return res.status(500).json({ error: friendlyLLMError(e.message) });
   }
 }

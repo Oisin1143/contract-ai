@@ -4,7 +4,8 @@
 // plus a ready-to-send negotiation email for each.
 
 import { isRateLimited } from "./_lib/rateLimit.js";
-import { friendlyGroqError } from "./_lib/groqErrors.js";
+import { friendlyLLMError } from "./_lib/llmErrors.js";
+import { callLLM } from "./_lib/llm.js";
 
 function buildPrompt({ clause, issue, explanation, mode, contractType }) {
   const perspective =
@@ -82,45 +83,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Clause too long (max 4,000 chars)." });
   }
 
-  const GROQ_KEY = process.env.GROQ_KEY;
-  if (!GROQ_KEY) {
-    return res.status(500).json({ error: "Server misconfiguration: missing API key." });
-  }
-
   try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a senior UK commercial contracts solicitor producing deployable redline language and negotiation correspondence. You return only valid JSON, never prose. All drafting is in UK English and commercially realistic.",
-          },
-          {
-            role: "user",
-            content: buildPrompt({ clause, issue, explanation, mode, contractType }),
-          },
-        ],
-        max_tokens: 3500,
-        temperature: 0.4,
-        response_format: { type: "json_object" },
-      }),
+    const { content: raw } = await callLLM({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a senior UK commercial contracts solicitor producing deployable redline language and negotiation correspondence. You return only valid JSON, never prose. All drafting is in UK English and commercially realistic.",
+        },
+        {
+          role: "user",
+          content: buildPrompt({ clause, issue, explanation, mode, contractType }),
+        },
+      ],
+      maxTokens: 3500,
+      temperature: 0.4,
+      jsonMode: true,
+      routeName: "negotiate",
     });
-
-    if (!groqRes.ok) {
-      const err = await groqRes.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Groq error ${groqRes.status}`);
-    }
-
-    const groqData = await groqRes.json();
-    const raw = groqData.choices?.[0]?.message?.content || "";
-    if (!raw) throw new Error("Empty response from Groq.");
 
     let parsed;
     try {
@@ -145,6 +125,6 @@ export default async function handler(req, res) {
     return res.status(200).json(parsed);
   } catch (e) {
     console.error("Negotiate error:", e.message);
-    return res.status(500).json({ error: friendlyGroqError(e.message) });
+    return res.status(500).json({ error: friendlyLLMError(e.message) });
   }
 }
